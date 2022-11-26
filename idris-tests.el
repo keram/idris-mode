@@ -44,8 +44,7 @@
     (should (string= "37072" (match-string 2 output)))))
 
 (ert-deftest idris-test-idris-quit ()
-  "Ensure that running Idris and quitting doesn't leave behind
-unwanted buffers."
+  "Ensure that running Idris and quitting doesn't leave behind unwanted buffers."
   (let ((before (buffer-list)))
     (idris-repl)
     (dotimes (_ 5) (accept-process-output nil 1))
@@ -55,9 +54,8 @@ unwanted buffers."
       (should (= (length extra) 0)))))
 
 (ert-deftest idris-test-idris-quit-logging-enabled ()
-  "Ensure that running Idris and quitting doesn't leave behind
-unwanted buffers. In particular, only *idris-events* should
-remain."
+  "Ensure that running Idris and quitting doesn't leave behind unwanted buffers.
+In particular, only *idris-events* should remain."
   (let ((before (buffer-list))
         (idris-log-events 't))
     (idris-repl)
@@ -73,7 +71,7 @@ remain."
 
 (ert-deftest idris-test-hole-load ()
   "Test the hole-list-on-load setting."
-  (idris-quit)
+
   ;;; The default setting should be to show holes
   (should idris-hole-show-on-load)
 
@@ -107,7 +105,7 @@ remain."
   (idris-quit))
 
 (ert-deftest idris-test-proof-search ()
-  "Test that proof search works"
+  "Test that proof search works."
   :expected-result (if (string-match-p "idris2" idris-interpreter-path)
                        :failed
                      :passed)
@@ -121,6 +119,8 @@ remain."
       (idris-proof-search)
       (dotimes (_ 5) (accept-process-output nil 1))
       (should (looking-at-p "lteSucc (lteSucc (lteSucc (lteSucc (lteSucc lteZero))))"))
+
+      ;; Cleanup
       (move-beginning-of-line nil)
       (delete-region (point) (line-end-position))
       (insert "prf = ?search_here")
@@ -131,7 +131,7 @@ remain."
   (idris-quit))
 
 (ert-deftest idris-test-find-cmdline-args ()
-  "Test that idris-mode calculates command line arguments from .ipkg files."
+  "Test that `idris-mode' calculates command line arguments from .ipkg files."
   ;; Outside of a project, none are found
   (let ((buffer (find-file "test-data/ProofSearch.idr")))
     (with-current-buffer buffer
@@ -160,14 +160,12 @@ remain."
 
 (ert-deftest idris-test-idris-type-search ()
   "Test that `idris-type-search' produces output in Idris info buffer."
-  (let ((buffer (find-file "test-data/AddClause.idr")))
-    (with-current-buffer buffer
-      (idris-load-file)
-      (funcall-interactively 'idris-type-search "Nat"))
-    (with-current-buffer (get-buffer idris-info-buffer-name)
+  (idris-run)
+  (funcall-interactively 'idris-type-search "Nat")
+  (with-current-buffer (get-buffer idris-info-buffer-name)
       (goto-char (point-min))
       (should (re-search-forward "Zero" nil t)))
-    (idris-quit)))
+  (idris-quit))
 
 (ert-deftest idris-test-ipkg-packages-with-underscores-and-dashes ()
   "Test that loading an ipkg file can have dependencies on packages with _ or - in the name."
