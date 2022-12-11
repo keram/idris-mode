@@ -43,7 +43,7 @@ Use the current buffer if BUFFER is nil."
   "Compute the Emacs position offset of the Idris column IDRIS-COL.
 
 In particular, this takes bird tracks into account in literate Idris."
-  (+ idris-col (if (idris-lidr-p) 1 -1)))
+  (1- idris-col))
 
 (defun idris-highlight--overlay-modification-hook (&rest args)
   "Delete semantic overlays if they are changed.
@@ -51,8 +51,25 @@ In particular, this takes bird tracks into account in literate Idris."
 See Info node `(elisp)Overlay Properties' to understand how ARGS are used."
   ;; There are 5 args when it's called post-modification
   (when (= (length args) 5)
-    (let ((overlay (car args)))
-      (delete-overlay overlay))))
+    (delete-overlay (car args))))
+
+(defun idris-add-overlay-properties (overlay plist)
+  "Add the contents of PLIST to the properties of OVERLAY."
+  (while (and plist (cdr plist))
+    (overlay-put overlay (car plist) (cadr plist))
+    (setq plist (cddr plist))))
+
+(defun idris-existing-overlays-in-range (start end)
+  (seq-filter
+   (lambda (overlay)
+     (overlay-get overlay 'idris-source-highlight))
+   (overlays-in start end)))
+
+(defun idris-existing-overlay-in-range (start end lst)
+  (seq-find (lambda (overlay)
+              (and (eql start (overlay-start overlay))
+                   (eql end (overlay-end overlay))))
+            lst))
 
 (defun idris-highlight-input-region (buffer start-line start-col end-line end-col highlight)
   "Highlight in BUFFER using an overlay from START-LINE and START-COL to
@@ -96,6 +113,26 @@ See Info node `(elisp)Overlay Properties' to understand how ARGS are used."
                end-line end-col
                highlight))))
 
+(defun idris-highlight-input-region-v2 (buffer start-line start-col end-line end-col highlight)
+  "Highlight in BUFFER using an overlay from START-LINE and START-COL to
+ END-LINE and END-COL and the semantic properties specified in HIGHLIGHT."
+  (with-current-buffer buffer
+    (save-restriction
+      (widen)
+      (let* ((start-pos (+ (line-beginning-position start-line)
+                           (idris-highlight-column start-col)))
+             (end-pos (+ (line-beginning-position end-line)
+                         (idris-highlight-column end-col)))
+             (existing-idris-overlays-in-range (idris-existing-overlays-in-range start-pos end-pos))
+             (existing-idris-overlay (idris-existing-overlay-in-range start-pos end-pos existing-idris-overlays-in-range)))
+        (when (null existing-idris-overlay)
+          (mapc 'delete-overlay existing-idris-overlays-in-range)
+          (let ((highlight-overlay (make-overlay start-pos end-pos)))
+            (overlay-put highlight-overlay 'idris-source-highlight t)
+            (idris-add-overlay-properties highlight-overlay (idris-semantic-properties highlight))
+            (overlay-put highlight-overlay 'modification-hooks '(idris-highlight--overlay-modification-hook)))))
+      )))
+
 (defun idris-highlight-source-file (hs)
   (cl-loop
    for h in hs
@@ -106,19 +143,30 @@ See Info node `(elisp)Overlay Properties' to understand how ARGS are used."
            ,props)
          (let ((buffer (get-file-buffer (expand-file-name fn idris-process-current-working-directory))))
            (when buffer
-             (let ((start-line (if (>=-protocol-version 2 1)
-                                   (1+ start-line-raw)
-                                 start-line-raw))
-                   (start-col  (if (>=-protocol-version 2 1)
-                                   (1+ start-col-raw)
-                                 start-col-raw))
-                   (end-line   (if (>=-protocol-version 2 1)
-                                   (1+ end-line-raw)
-                                 end-line-raw))
-                   (end-col    (if (>= idris-protocol-version 1)
-                                   (1+ end-col-raw)
-                                 end-col-raw)))
+             (let ((start-line (1+ start-line-raw))
+                   (start-col (1+ start-col-raw))
+                   (end-line (1+ end-line-raw))
+                   (end-col (1+ end-col-raw)))
                (idris-highlight-input-region buffer
+                                             start-line start-col
+                                             end-line end-col
+                                             props))))))))
+
+(defun idris-highlight-source-file-v2 (hs)
+  (cl-loop
+   for h in hs
+   do (pcase h
+        (`(((:filename ,fn)
+            (:start ,start-line-raw ,start-col-raw)
+            (:end ,end-line-raw ,end-col-raw))
+           ,props)
+         (let ((buffer (get-file-buffer (expand-file-name fn idris-process-current-working-directory))))
+           (when buffer
+             (let ((start-line (1+ start-line-raw))
+                   (start-col (1+ start-col-raw))
+                   (end-line (1+ end-line-raw))
+                   (end-col (1+ end-col-raw)))
+               (idris-highlight-input-region-v2 buffer
                                              start-line start-col
                                              end-line end-col
                                              props))))))))

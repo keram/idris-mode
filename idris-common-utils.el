@@ -309,11 +309,6 @@ inserted text (that is, relative to point prior to insertion)."
                             length
                             (idris-semantic-properties props))))
 
-(defun idris-add-overlay-properties (overlay plist)
-  "Add the contents of PLIST to the properties of OVERLAY."
-  (while (and plist (cdr plist))
-    (overlay-put overlay (car plist) (cadr plist))
-    (setq plist (cddr plist))))
 
 ;;; Was originally slime-search-property - thanks SLIME!
 (defun idris-search-property (prop &optional backward prop-value-fn)
