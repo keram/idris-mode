@@ -135,19 +135,18 @@ BODY is code to be executed within the temp buffer.  Point is
 
 ;; Based on https://www.gnu.org/software/emacs/manual/html_node/ert/Fixtures-and-Test-Suites.html
 (defun with-idris-file-fixture (relative-filepath body)
-  (save-window-excursion
-    (let* ((buffer (find-file relative-filepath))
-           (buffer-content (buffer-substring-no-properties (point-min) (point-max))))
-      (unwind-protect
-          (progn (goto-char (point-min))
-                 (funcall body))
+  (let* ((buffer (find-file relative-filepath))
+         (buffer-content (buffer-substring-no-properties (point-min) (point-max))))
+    (unwind-protect
+        (progn (goto-char (point-min))
+               (funcall body))
 
-        ;; Cleanup (Tear down)
-        (idris-delete-ibc t)
-        (erase-buffer)
-        (insert buffer-content)
-        (save-buffer)
-        (kill-buffer)))))
+      ;; Cleanup (Tear down)
+      (idris-delete-ibc t)
+      (erase-buffer)
+      (insert buffer-content)
+      (save-buffer)
+      (kill-buffer))))
 
 (provide 'idris-test-utils)
 ;;; idris-test-utils.el ends here
