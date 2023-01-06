@@ -76,15 +76,10 @@
        (member idris-loaded-region-overlay (overlays-at pos))
        t))
 
-(defun idris-ensure-process-and-repl-buffer ()
-  "Ensure that an Idris process is running and the Idris REPL buffer exists."
-  (idris-run)
-  (idris-repl-buffer))
-
 (defun idris-switch-working-directory (new-working-directory)
   "Switch working directory to NEW-WORKING-DIRECTORY."
   (unless (string= idris-process-current-working-directory new-working-directory)
-    (idris-ensure-process-and-repl-buffer)
+    (idris-run)
     (let* ((path (if (> idris-protocol-version 1)
                      (prin1-to-string new-working-directory)
                    new-working-directory))
@@ -194,7 +189,7 @@ A prefix argument SET-LINE forces loading but only up to the current line."
           (idris-prover-abandon)
         (signal 'quit nil)))
     (save-buffer)
-    (idris-ensure-process-and-repl-buffer)
+    (idris-run)
     ;; Remove warning overlays
     (idris-warning-reset-all)
     ;; Clear the contents of the compiler notes buffer, if it exists
@@ -261,7 +256,7 @@ This sets the load position to point, if there is one."
   (unless (buffer-file-name)
     (error "Cannot find file for current buffer"))
   (save-buffer)
-  (idris-ensure-process-and-repl-buffer)
+  (idris-run)
   (unless (idris-position-loaded-p (point))
     (idris-warning-reset-all)
     (when (and idris-load-to-here

@@ -239,6 +239,9 @@ The first function will be called with a final result, and the second
            ;; Commands that don't ask for :output don't get it
            (when (and rec (nth 2 rec))
              (funcall (nth 2 rec) value))))
+        ((:write-string output _id) (message "%s" output) t)
+        ;; Ignore :set-prompt as it is handled by repl if it is loaded
+        ((:set-prompt _prompt _id) t)
         ((:return value id)
          (let ((rec (assq id idris-rex-continuations)))
            (cond (rec (setf idris-rex-continuations
