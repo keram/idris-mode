@@ -79,7 +79,6 @@
 (defun idris-switch-working-directory (new-working-directory)
   "Switch working directory to NEW-WORKING-DIRECTORY."
   (unless (string= idris-process-current-working-directory new-working-directory)
-    (idris-run)
     (let* ((path (if (> idris-protocol-version 1)
                      (prin1-to-string new-working-directory)
                    new-working-directory))
@@ -950,7 +949,10 @@ https://github.com/clojure-emacs/cider"
                   t))
       (set-process-sentinel idris-process 'idris-sentinel)
       (setq idris-current-flags command-line-flags)
-      (accept-process-output idris-process 3))))
+      (accept-process-output idris-process 3)
+      (when idris-repl-show-repl-on-startup
+        (display-buffer (idris-repl-buffer) t)))))
+
 
 (defun idris-quit ()
   "Quit the Idris process, cleaning up the state synchronized with Emacs."

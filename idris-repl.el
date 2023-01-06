@@ -167,14 +167,10 @@ If ALWAYS-INSERT is non-nil, always insert a prompt at the end of the buffer."
 (defun idris-repl-buffer ()
   "Return or create the Idris REPL buffer."
   (or (get-buffer idris-repl-buffer-name)
-      (let ((buffer (get-buffer-create idris-repl-buffer-name)))
-        (save-selected-window
-          (when idris-repl-show-repl-on-startup
-            (display-buffer buffer t))
-          (with-current-buffer buffer
-            (idris-repl-mode)
-            (idris-repl-buffer-init))
-          buffer))))
+      (with-current-buffer (get-buffer-create idris-repl-buffer-name)
+        (idris-repl-mode)
+        (idris-repl-buffer-init)
+        (current-buffer))))
 
 (defun idris-repl-clear-buffer ()
   "Clear prior output from the Idris REPL buffer."
