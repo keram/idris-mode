@@ -917,6 +917,18 @@ https://github.com/clojure-emacs/cider"
           (user-error "No Idris buffer found")))
     (user-error "Not in a Idris REPL buffer")))
 
+(defun idris-switch-to-repl ()
+  "Select the output buffer and scroll to bottom."
+  (interactive)
+  (idris-run)
+  (pop-to-buffer (idris-repl-buffer))
+  (goto-char (point-max)))
+
+(define-obsolete-function-alias 'idris-switch-to-output-buffer 'idris-switch-to-repl "2022-12-28")
+
+;;;###autoload
+(defalias 'idris-repl #'idris-switch-to-repl)
+
 (defun idris-run ()
   "Run an inferior Idris process."
   (interactive)
