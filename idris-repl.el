@@ -182,19 +182,6 @@ If ALWAYS-INSERT is non-nil, always insert a prompt at the end of the buffer."
       (idris-repl-insert-prompt)
       (insert current-input))))
 
-(autoload 'idris-run "idris-commands.el")
-(defun idris-switch-to-repl ()
-  "Select the output buffer and scroll to bottom."
-  (interactive)
-  (idris-run)
-  (pop-to-buffer (idris-repl-buffer))
-  (goto-char (point-max)))
-
-(define-obsolete-function-alias 'idris-switch-to-output-buffer 'idris-switch-to-repl "2022-12-28")
-
-;;;###autoload
-(defalias 'idris-repl #'idris-switch-to-repl)
-
 (defvar idris-repl-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<RET>") 'idris-repl-return)
