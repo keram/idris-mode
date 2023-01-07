@@ -103,9 +103,11 @@ Ensure that the buffer is in `idris-info-mode'."
         (idris-info-mode)))
     buffer))
 
+(autoload 'idris-switch-to-last-idris-buffer "idris-commands.el")
 (defun idris-info-quit ()
   (interactive)
-  (idris-kill-buffer idris-info-buffer-name))
+  (idris-kill-buffer idris-info-buffer-name)
+  (idris-switch-to-last-idris-buffer))
 
 (defun idris-info-buffer-visible-p ()
   (if (get-buffer-window idris-info-buffer-name 'visible) t nil))
