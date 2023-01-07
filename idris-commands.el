@@ -908,14 +908,12 @@ so it is convenient to jump between Idris code and REPL.
 Inspired by `cider-switch-to-last-clojure-buffer'
 https://github.com/clojure-emacs/cider"
   (interactive)
-  (if (derived-mode-p 'idris-repl-mode)
-      (let ((idris-buffer (seq-find
-                           (lambda (b) (eq 'idris-mode (buffer-local-value 'major-mode b)))
-                           (buffer-list))))
-        (if idris-buffer
-            (pop-to-buffer idris-buffer `(display-buffer-reuse-window))
-          (user-error "No Idris buffer found")))
-    (user-error "Not in a Idris REPL buffer")))
+  (let ((buffer (seq-find
+                 (lambda (b) (eq 'idris-mode (buffer-local-value 'major-mode b)))
+                 (buffer-list))))
+    (if buffer
+        (pop-to-buffer buffer `(display-buffer-reuse-window))
+      (user-error "No Idris buffer found"))))
 
 (defun idris-switch-to-repl ()
   "Select the output buffer and scroll to bottom."
