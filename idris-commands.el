@@ -255,9 +255,10 @@ A prefix argument SET-LINE forces loading but only up to the current line."
 This sets the load position to point, if there is one."
   (unless (buffer-file-name)
     (error "Cannot find file for current buffer"))
-  (save-buffer)
-  (idris-run)
   (unless (idris-position-loaded-p (point))
+    (save-buffer)
+    (let ((idris-repl-show-repl-on-startup nil))
+      (idris-run))
     (idris-warning-reset-all)
     (when (and idris-load-to-here
                (< (marker-position idris-load-to-here) (point)))
@@ -272,9 +273,9 @@ This sets the load position to point, if there is one."
               (if idris-load-to-here
                   `(:load-file ,fn ,(idris-get-line-num idris-load-to-here))
                 `(:load-file ,fn)))))
+        (idris-make-clean)
         (idris-update-options-cache)
         (setq idris-currently-loaded-buffer (current-buffer))
-        (idris-make-clean)
         (idris-update-loaded-region (car result))))))
 
 (defun idris-info-for-name (command name)
