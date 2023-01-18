@@ -44,7 +44,6 @@
       (idris-apply-source-highlight relative-filepath hss bench-fn))))
 
 (defun idris-simplified-dispatch-event (event)
-  (message "-t- %s" event)
   (or (run-hook-with-args-until-success 'idris-event-hooks event)
       (destructure-case event
         ((:output value _id)
@@ -68,8 +67,10 @@ Produces side-effects only."
 
 (defun idris-mapb (fn buffer)
   "Apply function FN to every expresion read from BUFFER."
+  (with-current-buffer buffer
+    (goto-char (point-min)))
   (while (ignore-errors (setq sexp (read buffer)))
-      (funcall fn sexp)))
+    (funcall fn sexp)))
 
 (defun idris-apply-events-to-buffer (buffer-file events-file)
   (let ((buf (find-file-noselect buffer-file))
@@ -77,21 +78,36 @@ Produces side-effects only."
     (with-current-buffer buf
       (idris-mapb 'idris-simplified-dispatch-event ev-buf))))
 
-(let ((f "./test/test-data/perf/idris2-load-file-src-Compiler-LambdaLift.el"))
-  (and (get-buffer f) (kill-buffer f)))
-(let ((f "./test/test-data/perf/test.el"))
-  (and (get-buffer f) (kill-buffer f)))
-(idris-apply-events-to-buffer
- "./test/test-data/perf/LambdaLift.idr"
- "./test/test-data/perf/test.el"
+(defun idris-run-highlight-events-benchmark (buffer-file events-file n)
+  (let ((gc-cons-threshold #x40000000)
+        (progress-reporter (make-progress-reporter "Collecting benchmark data..."))
+        (idris-protocol-version 3)) ;; most-positive-fixnum
+    (message "Cleaning existing overlays")
+    (idris-delete-source-highlight-overlays (find-file-noselect buffer-file))
+    (and (get-buffer events-file) (kill-buffer events-file))
+    (garbage-collect)
+    (prin1 (benchmark-run-compiled n
+       (idris-apply-events-to-buffer buffer-file events-file)))
+    (progress-reporter-done progress-reporter)))
 
- ;"./test/test-data/perf/idris2-load-file-src-Compiler-LambdaLift.el"
- )
+(idris-run-highlight-events-benchmark
+ "./test/test-data/perf/LambdaLift.idr"
+ "./test/test-data/perf/idris2-load-file-src-Compiler-LambdaLift.el" 1)
+
+;; (let ((f "./test/test-data/perf/idris2-load-file-src-Compiler-LambdaLift.el"))
+;;   (and (get-buffer f) (kill-buffer f)))
+;; (let ((f "./test/test-data/perf/test.el"))
+;;   (and (get-buffer f) (kill-buffer f)))
+
+;; (idris-apply-events-to-buffer
+;;  "./test/test-data/perf/LambdaLift.idr"
+;;  "./test/test-data/perf/test.el"
+;;  ;;"./test/test-data/perf/idris2-load-file-src-Compiler-LambdaLift.el"
+;;  )
 
 ;; (and (get-buffer "test.el") (kill-buffer "test.el"))
 ;; (with-current-buffer "LambdaLift.idr"
 ;;    (idris-mapf 'idris-simplified-dispatch-event "idris2-load-file-src-Compiler-LambdaLift.el"))
-
 
 (defun idris-profile (n relative-filepath hss bench-fn)
   (let ((gc-cons-threshold #x40000000)) ;; most-positive-fixnum
