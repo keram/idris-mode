@@ -89,8 +89,9 @@ See Info node `(elisp)Overlay Properties' to understand how ARGS are used."
           (:end ,end-line-raw ,end-col-raw))
          ,props)
        hs)
-    (when (string= (file-name-nondirectory fn)
-                   (file-name-nondirectory (buffer-file-name)))
+    (when (and (buffer-file-name) ;; TODO: Update tests to remove this check
+               (string= (file-name-nondirectory fn)
+                        (file-name-nondirectory (buffer-file-name))))
       (let ((start-line (if (>=-protocol-version 2 1)
                             (1+ start-line-raw)
                           start-line-raw))
@@ -142,6 +143,11 @@ Otherwise return current value of `idris-semantic-source-highlighting'"
     (message "Semantic source highlighting is disabled for the current buffer. %s"
              "Customize `idris-semantic-source-highlighting-max-buffer-size' to enable it.")
     nil))
+
+(defun idris-syntax-higlight-event-hook-function (event)
+  (pcase event
+    (`(:output (:ok (:highlight-source ,hs)) ,_id)
+     (progn (idris-highlight-source-file hs) t))))
 
 (provide 'idris-highlight-input)
 ;;; idris-highlight-input.el ends here
