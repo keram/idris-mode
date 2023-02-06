@@ -90,9 +90,14 @@
     ["Show term interaction widgets" idris-add-term-widgets t]
     ["Close Idris info buffer" idris-notes-quit t]))
 
-(defun idris-notes-quit ()
-  (interactive)
-  (idris-kill-buffer idris-notes-buffer-name))
+(defalias 'idris-notes-quit #'quit-window)
+
+(defun idris-notes-erase-buffer ()
+  "Clear the contents of the compiler notes buffer, if it exists."
+  (when (get-buffer idris-notes-buffer-name)
+    (with-current-buffer idris-notes-buffer-name
+      (let ((inhibit-read-only t))
+        (erase-buffer)))))
 
 (define-derived-mode idris-compiler-notes-mode special-mode "Compiler-Notes"
   "Major mode for displaying Idris compiler notes.

@@ -188,12 +188,8 @@ A prefix argument SET-LINE forces loading but only up to the current line."
         (signal 'quit nil)))
     (save-buffer)
     (idris-run)
-    ;; Remove warning overlays
     (idris-warning-reset-all)
-    ;; Clear the contents of the compiler notes buffer, if it exists
-    (when (get-buffer idris-notes-buffer-name)
-      (with-current-buffer idris-notes-buffer-name
-        (let ((inhibit-read-only t)) (erase-buffer))))
+    (idris-notes-erase-buffer)
     ;; Actually do the loading
     (let* ((dir-and-fn (idris-filename-to-load))
            (fn (cdr dir-and-fn))
