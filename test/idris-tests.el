@@ -106,8 +106,13 @@
 (ert-deftest idris-test-warning-overlay ()
   "Test that `idris-warning-overaly-point' works as expected."
   (let* ((buffer (find-file-noselect "test-data/AddClause.idr"))
-         (warning '("AddClause.idr" (5 7) (5 17) "Some warning message" ()))
-         (idris-raw-warnings '())
+         (warning (make-idris-warning :filename "AddClause.idr"
+                                      :startline 5
+                                      :startcol 7
+                                      :endline 5
+                                      :endcol 17
+                                      :message "Some warning message"
+                                      :spans '()))
          (idris-process-current-working-directory (file-name-directory (buffer-file-name buffer)))
          (expected-position)
          (expected-overlay))
@@ -121,9 +126,6 @@
       ;; Assert that the point position does not change
       ;; https://github.com/idris-community/idris2-mode/issues/36
       (should (eq (point) expected-position))
-
-      ;; Assert side effect
-      (should (not (null idris-raw-warnings)))
 
       ;; Assert that overlay was added
       (setq expected-overlay (car (overlays-in (point-min) (point-max))))
