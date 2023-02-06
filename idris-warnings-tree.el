@@ -88,7 +88,7 @@
   "Menu for Idris compiler notes buffers."
   `("Idris Notes"
     ["Show term interaction widgets" idris-add-term-widgets t]
-    ["Close Idris info buffer" idris-notes-quit t]))
+    ["Close Idris notes buffer" idris-notes-quit t]))
 
 (defalias 'idris-notes-quit #'quit-window)
 
