@@ -38,6 +38,13 @@
 
 (eval-when-compile (require 'cl-lib))
 
+(defun idris-repl-maybe-display-on-startup ()
+  "Display Idris Repl buffer if `idris-repl-show-repl-on-startup' is not nil."
+  (when idris-repl-show-repl-on-startup
+    (display-buffer (idris-repl-buffer) t)))
+
+(add-hook 'idris-run-hook #'idris-repl-maybe-display-on-startup)
+
 ;;; Words of encouragement - strongly inspired by Slime
 (defun idris-user-first-name ()
   (let ((name (if (string= (user-full-name) "")

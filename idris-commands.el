@@ -890,10 +890,6 @@ type-correct, so loading will fail."
   (let ((bufs (list :connection :repl :proof-obligations :proof-shell :proof-script :log :info :notes :holes :tree-viewer)))
     (dolist (b bufs) (idris-kill-buffer b))))
 
-(defun idris-remove-event-hooks ()
-  "Remove Idris event hooks set after connection with Idris established."
-  (dolist (h idris-event-hooks) (remove-hook 'idris-event-hooks h)))
-
 (define-obsolete-function-alias 'idris-pop-to-repl 'idris-switch-to-repl "2022-12-28")
 
 (defun idris-switch-to-last-idris-buffer ()
@@ -929,63 +925,28 @@ https://github.com/clojure-emacs/cider"
   (interactive)
   (let ((command-line-flags (idris-compute-flags)))
     ;; Kill the running Idris if the command-line flags need updating
-    (when (and (get-buffer-process (get-buffer idris-connection-buffer-name))
-               (not (equal command-line-flags idris-current-flags)))
+    (when (idris-command-line-flags-changed-p command-line-flags)
       (message "Idris command line arguments changed, restarting Idris")
-      (idris-quit)
+      (idris-disconnect)
       (sit-for 0.01)) ; allows the sentinel to run and reset idris-process
     ;; Start Idris if necessary
-    (when (not idris-process)
-      (setq idris-process
-            (get-buffer-process
-             (apply #'make-comint-in-buffer
-                    "idris"
-                    idris-process-buffer-name
-                    idris-interpreter-path
-                    nil
-                    "--ide-mode-socket"
-                    command-line-flags)))
-      (with-current-buffer idris-process-buffer-name
-        (add-hook 'comint-preoutput-filter-functions
-                  'idris-process-filter
-                  nil
-                  t)
-        (add-hook 'comint-output-filter-functions
-                  'idris-show-process-buffer
-                  nil
-                  t))
-      (set-process-sentinel idris-process 'idris-sentinel)
-      (setq idris-current-flags command-line-flags)
-      (accept-process-output idris-process 3)
-      (when idris-repl-show-repl-on-startup
-        (display-buffer (idris-repl-buffer) t)))))
-
+    (setq idris-process (or idris-process
+                            (idris-start-server-process command-line-flags)))
+    (setq idris-current-flags command-line-flags)))
 
 (defun idris-quit ()
   "Quit the Idris process, cleaning up the state synchronized with Emacs."
   (interactive)
   (setq idris-prover-currently-proving nil)
-  (let* ((pbuf (get-buffer idris-process-buffer-name))
-         (cbuf (get-buffer idris-connection-buffer-name)))
-    (when cbuf
-      (when (get-buffer-process cbuf)
-        (with-current-buffer cbuf (delete-process nil))) ; delete connection without asking
-      (kill-buffer cbuf))
-    (when pbuf
-      (when (get-buffer-process pbuf)
-        (with-current-buffer pbuf (delete-process nil))) ; delete process without asking
-      (kill-buffer pbuf)
-      (unless (get-buffer idris-process-buffer-name) (idris-kill-buffers))
-      (setq idris-rex-continuations '())
-      (when idris-loaded-region-overlay
+  (idris-disconnect)
+  (when idris-loaded-region-overlay
         (delete-overlay idris-loaded-region-overlay)
-        (setq idris-loaded-region-overlay nil)))
+        (setq idris-loaded-region-overlay nil))
     (idris-prover-end)
     (idris-kill-buffers)
-    (idris-remove-event-hooks)
     (setq idris-process-current-working-directory nil)
     (setq idris-protocol-version 0
-          idris-protocol-version-minor 0)))
+          idris-protocol-version-minor 0))
 
 (defun idris-delete-ibc (no-confirmation)
   "Delete the IBC file for the current buffer.

@@ -75,6 +75,36 @@ Set using file or directory variables.")
   "The list of `command-line-args' actually passed to Idris.
 This is maintained to restart Idris when the arguments change.")
 
+(defun idris-command-line-flags-changed-p (command-line-flags)
+  "Return t if COMMAND-LINE-FLAGS for current Idris process changed."
+  (and (get-buffer-process (get-buffer idris-connection-buffer-name))
+       (not (equal command-line-flags idris-current-flags))))
+
+(defun idris-start-server-process (command-line-flags)
+  "Start Idris process in IDE mode with COMMAND-LINE-FLAGS.
+Return the newly created Idris process."
+  (let ((idris-process
+           (get-buffer-process
+            (apply #'make-comint-in-buffer
+                   "idris"
+                   idris-process-buffer-name
+                   idris-interpreter-path
+                   nil
+                   "--ide-mode-socket"
+                   command-line-flags))))
+      (with-current-buffer idris-process-buffer-name
+        (add-hook 'comint-preoutput-filter-functions
+                  'idris-process-filter
+                  nil
+                  t)
+        (add-hook 'comint-output-filter-functions
+                  'idris-show-process-buffer
+                  nil
+                  t))
+      (set-process-sentinel idris-process 'idris-sentinel)
+      (accept-process-output idris-process 3)
+      idris-process))
+
 (defun idris-connect (port)
   "Establish a connection with a Idris REPL at PORT."
   (when (not idris-connection)
@@ -397,6 +427,24 @@ Returns nil if the version of Idris used doesn't support asking for versions."
                     "")))
       nil)))
 
+(defun idris-remove-event-hooks ()
+  "Remove Idris event hooks set after connection with Idris established."
+  (dolist (h idris-event-hooks) (remove-hook 'idris-event-hooks h)))
+
+(defun idris-disconnect ()
+  "Close connection and quit the Idris process."
+  (let ((pbuf (get-buffer idris-process-buffer-name))
+        (cbuf (get-buffer idris-connection-buffer-name)))
+    (when cbuf
+      (when (get-buffer-process cbuf)
+        (with-current-buffer cbuf (delete-process nil))) ; delete connection without asking
+      (kill-buffer cbuf))
+    (when pbuf
+      (when (get-buffer-process pbuf)
+        (with-current-buffer pbuf (delete-process nil))) ; delete process without asking
+      (kill-buffer pbuf))
+    (setq idris-rex-continuations '())
+    (idris-remove-event-hooks)))
 
 (provide 'inferior-idris)
 ;;; inferior-idris.el ends here
