@@ -210,8 +210,6 @@ A prefix argument SET-LINE forces loading but only up to the current line."
          (idris-make-clean)
          (idris-update-options-cache)
          (setq idris-currently-loaded-buffer (current-buffer))
-         (when (member 'warnings-tree idris-warnings-printing)
-           (idris-list-compiler-notes))
          (run-hooks 'idris-load-file-success-hook)
          (idris-update-loaded-region result))
        (lambda (_condition)
