@@ -30,6 +30,7 @@
 ;;; Code:
 (require 'idris-core)
 (require 'idris-settings)
+(require 'idris-eldoc)
 (require 'cl-lib)
 
 
@@ -194,35 +195,6 @@ inserted text (that is, relative to point prior to insertion)."
     (append (if computed-face (list 'face computed-face) ())
             (if mousable-face (list 'mouse-face mousable-face) ()))))
 
-
-(defun idris-semantic-properties-eldoc (props)
-  "Compute an Eldoc string from Idris semantic properties (PROPS)."
-  (let* ((name (assoc :name props))
-         (namespace (assoc :namespace props))
-         (source-file (assoc :source-file props))
-         (type (pcase (assoc :type props)
-                 (`(:type ,ty)
-                  (concat " : " ty))
-                 (_ "")))
-         (doc-overview (pcase (assoc :doc-overview props)
-                         (`(:doc-overview ,docs)
-                          (if (string-match "[^ ]" docs)
-                              (concat "\n"
-                                      ;; Emacs will do its own line-wrapping in Eldoc
-                                      (replace-regexp-in-string "\\\n" " " docs))
-                            ""))
-                         (_ ""))))
-    (cond (name (list 'idris-eldoc
-                      (concat (cadr name)
-                              ;; Emacs will do its own line-wrapping in Eldoc
-                              (replace-regexp-in-string "\\\n" " " type)
-                              doc-overview)))
-          ((and namespace source-file)
-           (list 'idris-eldoc
-                 (file-relative-name (cadr source-file))))
-          (namespace (list 'idris-eldoc
-                           (cadr namespace)))
-          (t nil))))
 
 
 (defun idris-semantic-properties-help-echo (props)

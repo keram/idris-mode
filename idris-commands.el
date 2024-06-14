@@ -500,10 +500,6 @@ Considered as a global variable"
     (when name
       (idris-info-for-name :docs-for name))))
 
-(defun idris-eldoc-lookup ()
-  "Return Eldoc string associated with the thing at point."
-  (get-char-property (point) 'idris-eldoc))
-
 (defun idris-pretty-print ()
   "Get a term or definition pretty-printed by Idris.
 Useful for writing papers or slides."
