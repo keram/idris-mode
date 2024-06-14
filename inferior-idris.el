@@ -287,9 +287,8 @@ versions cannot deal with that."
   (idris-rex (cont (buffer (current-buffer)) failure-cont)
       sexp t
     ((:ok result)
-     (when cont
-       (set-buffer buffer)
-       (funcall cont result)))
+     (set-buffer buffer)
+     (funcall cont result))
     ((:error condition &optional _spans)
      (when failure-cont
        (set-buffer buffer)
