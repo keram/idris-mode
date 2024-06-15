@@ -65,7 +65,7 @@
   :command ("idris2"
             "--check" "--no-colour"
             ;; Compute the command-line options similarly to inferior-idris
-            (eval (idris-compute-flags))
+            (eval (idris-idris2-compute-flags))
             source-original)
   :error-patterns ((warning line-start
                             "Warning: "
@@ -91,6 +91,13 @@
                           ":"  end-column))
   :modes idris-mode)
 
+(defun idris-idris2-compute-flags ()
+  "Compute flags and add --source-dir flag from .ipkg file when present."
+  (let ((flags (idris-compute-flags))
+        (source-dir (idris-ipkg-find-src-dir)))
+    (if (stringp source-dir)
+        (nconc (list "--source-dir" source-dir) flags)
+      flags)))
 
 ;;; ###autoload
 (add-to-list 'flycheck-checkers 'idris)
