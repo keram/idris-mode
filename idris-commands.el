@@ -83,22 +83,23 @@
 
 (defun idris-switch-working-directory (new-working-directory)
   "Switch working directory to NEW-WORKING-DIRECTORY."
-  (unless (string= idris-process-current-working-directory new-working-directory)
-    (idris-ensure-process-and-repl-buffer)
-    (let* ((path (if (> idris-protocol-version 1)
-                     (prin1-to-string new-working-directory)
-                   new-working-directory))
-           (eval-result (idris-eval `(:interpret ,(concat ":cd " path))))
-           (result-msg (or (car-safe eval-result) "")))
-      ;; Check if the message from Idris contains the new directory path.
-      ;; Before check drop the last character (slash) in the path
-      ;; as the message does not include it.
-      (if (string-match-p (file-truename (substring new-working-directory 0 -1))
-                          result-msg)
-          (progn
-            (message result-msg)
-            (setq idris-process-current-working-directory new-working-directory))
-        (error "Failed to switch the working directory %s" eval-result)))))
+  ;; (unless (string= idris-process-current-working-directory new-working-directory)
+  ;; (idris-ensure-process-and-repl-buffer)
+  (let* ((path (if (> idris-protocol-version 1)
+                   (prin1-to-string new-working-directory)
+                 new-working-directory))
+         (eval-result (idris-eval `(:interpret ,(concat ":cd " path))))
+         (result-msg (or (car-safe eval-result) "")))
+    ;; Check if the message from Idris contains the new directory path.
+    ;; Before check drop the last character (slash) in the path
+    ;; as the message does not include it.
+    (if (string-match-p (file-truename (substring new-working-directory 0 -1))
+                        result-msg)
+        (progn
+          (message result-msg)
+          (setq idris-process-current-working-directory new-working-directory))
+      (error "Failed to switch the working directory %s" eval-result))))
+;; )
 
 (define-obsolete-function-alias 'idris-list-holes-on-load 'idris-list-holes "2022-12-15"
   "Use the user's settings from customize to determine whether to list the holes.")
@@ -502,19 +503,26 @@ Considered as a global variable"
 
 (defun idris-eldoc-lookup ()
   "Return Eldoc string associated with the thing at point."
-  (if (>=-protocol-version 2 1)
-      ;; Idris2 :docs-for command
-      (let* ((thing (idris-name-at-point))
-             (ty (idris-eval (list :docs-for thing) t))
-             (result (car ty))
-             (formatting (cdr ty))
-             (result-colour (with-temp-buffer
-                              (idris-propertize-spans (idris-repl-semantic-text-props formatting)
-                                (insert (or result "")))
-                              (buffer-string))))
-        result-colour)
-    ;; Idris 1 using :doc-overview semantic properties extracted from highlights
-    (get-char-property (point) 'idris-eldoc)))
+  (let ((prop (get-char-property (point) 'idris-eldoc)))
+    (if (and (stringp prop) (string-match "\:\s*$" prop) (>=-protocol-version 2 1))
+        ;; Idris2: Check the type of an expression, showing implicit
+        (let* ((thing (idris-name-at-point))
+               (ty (idris-eval (list :interpret (concat ":type " thing)) t))
+               (result (car ty))
+               (formatting (cdr ty))
+               (result-colour (with-temp-buffer
+                                (idris-propertize-spans (idris-repl-semantic-text-props formatting)
+                                  (insert (or result prop "")))
+                                (buffer-string)))
+               (overlay (seq-find (lambda (overlay)
+                                    (member 'idris-eldoc (overlay-properties overlay)))
+                                  (overlays-at (point)))))
+          ;; we cache the received type in place of the original 'idris-eldoc value
+          (when overlay
+            (overlay-put overlay 'idris-eldoc result-colour))
+          result-colour)
+      ;; Idris1: using :doc-overview semantic properties extracted from highlights
+      prop)))
 
 (defun idris-pretty-print ()
   "Get a term or definition pretty-printed by Idris.
@@ -967,7 +975,9 @@ https://github.com/clojure-emacs/cider"
                (not (equal command-line-flags idris-current-flags)))
       (message "Idris command line arguments changed, restarting Idris")
       (idris-quit)
-      (sit-for 0.01)) ; allows the sentinel to run and reset idris-process
+      (message "-t- after quit %s : %s " command-line-flags idris-current-flags)
+      (sit-for 0.01)
+      (message "-t- after sit-for")) ; allows the sentinel to run and reset idris-process
     ;; Start Idris if necessary
     (when (not idris-process)
       (setq idris-process
