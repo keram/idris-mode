@@ -504,53 +504,26 @@ Considered as a global variable"
 (defun idris-eldoc-lookup ()
   "Return Eldoc string associated with the thing at point."
   (let ((prop (get-char-property (point) 'idris-eldoc)))
-    (when (and (stringp prop) (string-match "\:\s*$" prop) (>=-protocol-version 2 1))
+    (if (and (stringp prop) (string-match "\:\s*$" prop) (>=-protocol-version 2 1))
         ;; Idris2: Check the type of an expression, showing implicit
       (let ((overlay (seq-find (lambda (overlay)
                                  (member 'idris-eldoc (overlay-properties overlay)))
-                               (overlays-at (point)))))
-        (when overlay
+                               (overlays-at (point))))
+            (thing (idris-name-at-point)))
           (overlay-put overlay 'idris-eldoc nil)
-          (idris-eval-async
-           (list :interpret (concat ":type " (idris-name-at-point)))
-           (lambda (ty)
-             (message "-t- xx: %s" ty)
-             ;; (let ((result (car ty))
-             ;;       (overlay (seq-find (lambda (overlay)
-             ;;                            (member 'idris-eldoc (overlay-properties overlay)))
-             ;;                          (overlays-at (point)))))
-             ;;   ;; we cache the received type in place of the original 'idris-eldoc value
-             ;;   (when overlay (overlay-put overlay 'idris-eldoc result)))
-             )
-           ;; (lambda (ty)
-           ;;   (message "-t- erro cont %s" ty)
-           ;;   (let ((overlay (seq-find (lambda (overlay)
-           ;;                              (member 'idris-eldoc (overlay-properties overlay)))
-           ;;                            (overlays-at (point)))))
-           ;;     ;; we cache the received type in place of the original 'idris-eldoc value
-           ;;     (when overlay (overlay-put overlay 'idris-eldoc nil))))
-           )
-          )))
-
-
-      ;; (let* ((thing (idris-name-at-point))
-      ;;        (ty (idris-eval (list :interpret (concat ":type " thing)) t))
-      ;;        (result (car ty))
-      ;;        (formatting (cdr ty))
-      ;;        (result-colour (with-temp-buffer
-      ;;                         (idris-propertize-spans (idris-repl-semantic-text-props formatting)
-      ;;                           (insert (or result prop "")))
-      ;;                         (buffer-string)))
-      ;;        (overlay (seq-find (lambda (overlay)
-      ;;                             (member 'idris-eldoc (overlay-properties overlay)))
-      ;;                           (overlays-at (point)))))
-      ;;   ;; we cache the received type in place of the original 'idris-eldoc value
-      ;;   (when overlay
-      ;;     (overlay-put overlay 'idris-eldoc result-colour))
-      ;;   result-colour)
-      ;; Idris1: using :doc-overview semantic properties extracted from highlights
-      )
-    prop))
+          (let ((ty (idris-eval (list :interpret (concat ":type " thing)) t)))
+            (if ty
+                (let* ((result (car ty))
+                       (formatting (cdr ty))
+                       (result-colour (with-temp-buffer
+                                        (idris-propertize-spans (idris-repl-semantic-text-props formatting)
+                                          (insert (or result prop "")))
+                                        (buffer-string))))
+                  ;; we cache the received type in place of the original 'idris-eldoc value
+                  (overlay-put overlay 'idris-eldoc result-colour)
+                  result-colour)
+              nil)))
+      prop)))
 
 (defun idris-pretty-print ()
   "Get a term or definition pretty-printed by Idris.
