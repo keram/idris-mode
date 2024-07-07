@@ -313,6 +313,51 @@ myReverse xs = revAcc [] xs where
       (delete-directory mock-directory-name t)
       (idris-quit))))
 
+(defun idris-file-to-load-alist (file-name)
+  "Return FILE-NAME as an alist with keys: source-dir, work-dir and path."
+  (let* ((ipkg-file (car-safe (idris-find-file-upwards "ipkg")))
+         (work-dir (directory-file-name (file-name-parent-directory (or ipkg-file file-name))))
+         (source-dir (or (idris-ipkg-find-src-dir) work-dir)))
+    (list
+     (cons 'work-dir work-dir)
+     (cons 'source-dir source-dir)
+     (cons 'path (file-relative-name file-name source-dir)))))
+
+(ert-deftest idris-test-idris-file-to-load-alist ()
+  "Test that `idris-file-to-load-alist' returns expected data structure."
+  (cl-flet ((idris-ipkg-find-src-dir-stub () src-dir)
+            (idris-find-file-upwards-stub (_ex) ipkg-files))
+    (advice-add 'idris-ipkg-find-src-dir :override #'idris-ipkg-find-src-dir-stub)
+    (advice-add 'idris-find-file-upwards :override #'idris-find-file-upwards-stub)
+    (let* ((default-directory "/some/path/to/idris-project/src/Component")
+           (file "Foo.idr")
+           (file-name (file-name-concat default-directory file))
+           ipkg-files
+           src-dir)
+      (unwind-protect
+          (progn
+            ;; it contains all expected keys
+            (let ((result (idris-file-to-load-alist file-name)))
+              (should (equal "Foo.idr" (alist-get 'path result)))
+              (should (equal default-directory (alist-get 'source-dir result)))
+              (should (equal default-directory (alist-get 'work-dir result))))
+
+            (let* ((src-dir "/some/path/to/idris-project/src")
+                   (result (idris-file-to-load-alist file-name)))
+              (should (equal "Component/Foo.idr" (alist-get 'path result)))
+              (should (equal src-dir (alist-get 'source-dir result)))
+              (should (equal default-directory (alist-get 'work-dir result))))
+
+            (let* ((ipkg-files '("/some/path/to/idris-project/foo.ipkg"))
+                   (src-dir "/some/path/to/idris-project/src")
+                   (result (idris-file-to-load-alist file-name)))
+              (should (equal "Component/Foo.idr" (alist-get 'path result)))
+              (should (equal src-dir (alist-get 'source-dir result)))
+              (should (equal "/some/path/to/idris-project" (alist-get 'work-dir result)))))
+
+        (advice-remove 'idris-ipkg-find-src-dir #'idris-ipkg-find-src-dir-stub)
+        (advice-remove 'idris-find-file-upwards #'idris-find-file-upwards-stub)))))
+
 ;; Tests by Yasuhiko Watanabe
 ;; https://github.com/idris-hackers/idris-mode/pull/537/files
 (idris-ert-command-action "test-data/CaseSplit.idr" idris-case-split idris-test-eq-buffer)
