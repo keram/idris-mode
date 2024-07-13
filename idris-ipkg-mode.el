@@ -302,7 +302,7 @@ arguments."
 (defun idris-ipkg-buffer-src-dir (basename)
   (save-excursion
     (goto-char (point-min))
-    (if-let ((found (re-search-forward idris-ipkg-sourcedir-re nil t)))
+    (if (re-search-forward idris-ipkg-sourcedir-re nil t)
         (concat (file-name-directory basename)
                 (buffer-substring-no-properties (match-beginning 1) (match-end 1)))
       (file-name-directory basename))))
@@ -339,9 +339,8 @@ arguments."
 (defun idris-ipkg-flags-for-current-buffer ()
   "Extract the command line options field from the current .ipkg buffer."
   (let ((opts (idris-ipkg-find-cmdline-opts)))
-    (if (stringp opts)
-        (split-string opts nil t)
-      nil)))
+    (when (stringp opts)
+        (split-string opts nil t))))
 
 (defun idris-ipkg-pkgs-for-current-buffer ()
   "Find the explicit list of packages for the current .ipkg buffer."
