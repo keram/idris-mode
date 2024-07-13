@@ -234,6 +234,10 @@ arguments."
       (directory-files directory full match nosort)
     (error nil)))
 
+(defun idris-find-ipkg-file ()
+  "Return first found ipkg file in parent directory."
+  (car-safe (idris-find-file-upwards "ipkg")))
+
 (defvar idris-ipkg-build-buffer-name "*idris-build*")
 
 (defun idris-ipkg--compilation-buffer-name-function (_mode)
@@ -264,34 +268,34 @@ arguments."
 
 (defun idris-ipkg-build (ipkg-file)
   (interactive (list
-                (if-let ((ipkg-default (idris-find-file-upwards "ipkg")))
+                (if-let ((ipkg-default (idris-find-ipkg-file)))
                     (read-file-name "Package file to build: "
-                                    (file-name-directory (car ipkg-default))
-                                    (car ipkg-default)
+                                    (file-name-directory ipkg-default)
+                                    ipkg-default
                                     t
-                                    (file-name-nondirectory (car ipkg-default)))
+                                    (file-name-nondirectory ipkg-default))
                   (read-file-name "Package file to build: " nil nil nil t))))
   (idris-ipkg-command ipkg-file 'build))
 
 (defun idris-ipkg-install (ipkg-file)
   (interactive (list
-                (if-let ((ipkg-default (idris-find-file-upwards "ipkg")))
+                (if-let ((ipkg-default (idris-find-ipkg-file)))
                     (read-file-name "Package file to install: "
-                                    (file-name-directory (car ipkg-default))
-                                    (car ipkg-default)
+                                    (file-name-directory ipkg-default)
+                                    ipkg-default
                                     t
-                                    (file-name-nondirectory (car ipkg-default)))
+                                    (file-name-nondirectory ipkg-default))
                   (read-file-name "Package file to install: " nil nil nil t))))
   (idris-ipkg-command ipkg-file 'install))
 
 (defun idris-ipkg-clean (ipkg-file)
   (interactive (list
-                (if-let ((ipkg-default (idris-find-file-upwards "ipkg")))
+                (if-let ((ipkg-default (idris-find-ipkg-file)))
                     (read-file-name "Package file to clean: "
-                                    (file-name-directory (car ipkg-default))
-                                    (car ipkg-default)
+                                    (file-name-directory ipkg-default)
+                                    ipkg-default
                                     t
-                                    (file-name-nondirectory (car ipkg-default)))
+                                    (file-name-nondirectory ipkg-default))
                   (read-file-name "Package file to clean: " nil nil nil t))))
   (idris-ipkg-command ipkg-file 'clean))
 
@@ -308,14 +312,10 @@ arguments."
       (file-name-directory basename))))
 
 (defun idris-ipkg-find-src-dir (&optional ipkg-file)
-  (if-let ((found (or (and ipkg-file (list ipkg-file))
-                      (idris-find-file-upwards "ipkg"))))
-      (progn
-        (setq ipkg-file (car found))
-        ;; Now ipkg-file contains the path to the package
-        (with-temp-buffer
-          (insert-file-contents ipkg-file)
-          (idris-ipkg-buffer-src-dir ipkg-file)))))
+  (if-let ((found (or ipkg-file (idris-find-ipkg-file))))
+      (with-temp-buffer
+        (insert-file-contents found)
+        (idris-ipkg-buffer-src-dir found))))
 
 (defun idris-ipkg-buffer-cmdline-opts ()
   (save-excursion
@@ -327,14 +327,10 @@ arguments."
       "")))
 
 (defun idris-ipkg-find-cmdline-opts (&optional ipkg-file)
-  (if-let ((found (or (and ipkg-file (list ipkg-file))
-                      (idris-find-file-upwards "ipkg"))))
-      (progn
-        (setq ipkg-file (car found))
-        ;; Now ipkg-file contains the path to the package
-        (with-temp-buffer
-          (insert-file-contents ipkg-file)
-          (idris-ipkg-buffer-cmdline-opts)))))
+  (if-let ((found (or ipkg-file (idris-find-ipkg-file))))
+      (with-temp-buffer
+        (insert-file-contents found)
+        (idris-ipkg-buffer-cmdline-opts))))
 
 (defun idris-ipkg-flags-for-current-buffer ()
   "Extract the command line options field from the current .ipkg buffer."
@@ -344,7 +340,7 @@ arguments."
 
 (defun idris-ipkg-pkgs-for-current-buffer ()
   "Find the explicit list of packages for the current .ipkg buffer."
-  (if-let ((file (idris-find-file-upwards "ipkg")))
+  (if-let ((file (idris-find-ipkg-file)))
     (with-temp-buffer
         (let ((pkgs nil))
           (cl-flet
@@ -353,7 +349,7 @@ arguments."
                         (let ((beg (match-beginning 0))
                               (end (match-end 0)))
                           (push (buffer-substring-no-properties beg end) pkgs))))
-            (insert-file-contents (car file))
+            (insert-file-contents file)
             (goto-char (point-min))
             (when (re-search-forward "^\\s-*pkgs\\s-*=\\s-*" nil t)
               (cl-loop initially (get-pkg)
