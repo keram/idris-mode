@@ -189,6 +189,8 @@ If ALWAYS-INSERT is non-nil, always insert a prompt at the end of the buffer."
 (defun idris-switch-to-repl ()
   "Select the output buffer and scroll to bottom."
   (interactive)
+  (when (not idris-process)
+    (idris-run))
   (pop-to-buffer (idris-repl-buffer))
   (goto-char (point-max)))
 
