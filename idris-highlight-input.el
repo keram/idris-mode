@@ -45,14 +45,6 @@ Use the current buffer if BUFFER is nil."
 In particular, this takes bird tracks into account in literate Idris."
   (+ idris-col (if (idris-lidr-p) 1 -1)))
 
-(defun idris-highlight--overlay-modification-hook (&rest args)
-  "Delete semantic overlays if they are changed.
-
-See Info node `(elisp)Overlay Properties' to understand how ARGS are used."
-  ;; There are 5 args when it's called post-modification
-  (when (= (length args) 5)
-    (delete-overlay (car args))))
-
 (defun idris-highlight-input-region (start-line start-col end-line end-col highlight)
   "Highlight in BUFFER using an overlay from START-LINE and START-COL to
  END-LINE and END-COL and the semantic properties specified in HIGHLIGHT."
@@ -80,7 +72,7 @@ See Info node `(elisp)Overlay Properties' to understand how ARGS are used."
           (let ((highlight-overlay (make-overlay start-pos end-pos)))
             (overlay-put highlight-overlay 'idris-source-highlight t)
             (idris-add-overlay-properties highlight-overlay (idris-semantic-properties highlight))
-            (overlay-put highlight-overlay 'modification-hooks '(idris-highlight--overlay-modification-hook))))))))
+            (overlay-put highlight-overlay 'evaporate t)))))))
 
 (defun idris-highlight-source-file (hs)
   (pcase-dolist
