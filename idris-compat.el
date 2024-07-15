@@ -41,7 +41,7 @@ attention to case differences."
       (concat (apply 'concat (mapcar 'file-name-as-directory dirs))
               (car (reverse components))))))
 
-(if (fboundp 'file-name-parent-directoryx)
+(if (fboundp 'file-name-parent-directory)
     (defalias 'idris-file-name-parent-directory 'file-name-parent-directory)
   ;; Extracted from Emacs 29+ https://github.com/emacs-mirror/emacs/blob/master/lisp/files.el
   (defun idris-file-name-parent-directory (filename)
