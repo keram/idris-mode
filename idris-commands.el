@@ -93,7 +93,7 @@
       ;; Check if the message from Idris contains the new directory path.
       ;; Before check drop the last character (slash) in the path
       ;; as the message does not include it.
-      (if (string-match-p (file-truename (substring new-working-directory 0 -1))
+      (if (string-match-p (file-truename (directory-file-name new-working-directory))
                           result-msg)
           (progn
             (message result-msg)
