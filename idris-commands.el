@@ -232,28 +232,25 @@ A prefix argument SET-LINE forces loading but only up to the current line."
 (defun idris-view-compiler-log ()
   "Jump to the log buffer, if it is open."
   (interactive)
-  (let ((buffer (get-buffer idris-log-buffer-name)))
-    (if buffer
-        (pop-to-buffer buffer)
-      (user-error "No Idris compiler log is currently open"))))
+  (if-let ((buffer (get-buffer idris-log-buffer-name)))
+      (pop-to-buffer buffer)
+    (user-error "No Idris compiler log is currently open")))
 
 (defun idris-next-error ()
   "Jump to the next error overlay in the buffer."
   (interactive)
-  (let ((warnings-forward (sort (cl-remove-if-not #'(lambda (w) (> (overlay-start w) (point))) idris-warnings)
-                                #'(lambda (w1 w2) (<= (overlay-start w1) (overlay-start w2))))))
-    (if warnings-forward
-        (goto-char (overlay-start (car warnings-forward)))
-      (user-error "No warnings or errors until end of buffer"))))
+  (if-let ((warnings-forward (sort (cl-remove-if-not #'(lambda (w) (> (overlay-start w) (point))) idris-warnings)
+                                   #'(lambda (w1 w2) (<= (overlay-start w1) (overlay-start w2))))))
+      (goto-char (overlay-start (car warnings-forward)))
+    (user-error "No warnings or errors until end of buffer")))
 
 (defun idris-previous-error ()
   "Jump to the previous error overlay in the buffer."
   (interactive)
-  (let ((warnings-backward (sort (cl-remove-if-not #'(lambda (w) (< (overlay-end w) (point))) idris-warnings)
-                                 #'(lambda (w1 w2) (>= (overlay-end w1) (overlay-end w2))))))
-    (if warnings-backward
-        (goto-char (overlay-end (car warnings-backward)))
-      (user-error "No warnings or errors until beginning of buffer"))))
+  (if-let ((warnings-backward (sort (cl-remove-if-not #'(lambda (w) (< (overlay-end w) (point))) idris-warnings)
+                                    #'(lambda (w1 w2) (>= (overlay-end w1) (overlay-end w2))))))
+      (goto-char (overlay-end (car warnings-backward)))
+    (user-error "No warnings or errors until beginning of buffer")))
 
 (defun idris-load-file-sync ()
   "Pass the current buffer's file synchronously to the inferior Idris process.
@@ -362,9 +359,9 @@ printing definition of a type at point."
    ;; annotations at point when called interactively. Overlays are
    ;; preferred over text properties.
    (let ((default
-           (or (cl-some #'(lambda (o) (overlay-get o 'idris-namespace))
-                        (overlays-at (point)))
-               (get-text-property (point) 'idris-namespace))))
+          (or (cl-some #'(lambda (o) (overlay-get o 'idris-namespace))
+                       (overlays-at (point)))
+              (get-text-property (point) 'idris-namespace))))
      (list (read-string "Browse namespace: " default))))
   (idris-tree-info-show (idris-namespace-tree namespace)
                         "Browse Namespace"))
@@ -1142,9 +1139,7 @@ be Idris's own serialization of the term in question."
                         :elaborate-term))
     (error "Invalid term command %s" cmd))
   (with-current-buffer (or buffer (current-buffer))
-    (let ((term (plist-get (text-properties-at position) 'idris-tt-term)))
-      (if (null term)
-          (error "No term here")
+    (if-let ((term (plist-get (text-properties-at position) 'idris-tt-term)))
         (let* ((res (car (idris-eval (list cmd term))))
                (new-term (car res))
                (spans (cadr res))
@@ -1162,7 +1157,8 @@ be Idris's own serialization of the term in question."
                         (indent-rigidly (point) (point-max) col))
                       (put-text-property (point-min) (point-max) 'idris-tt-term new-tt-term)))
                   (buffer-string))))
-          (idris-replace-term-at position rendered))))))
+          (idris-replace-term-at position rendered))
+      (error "No term here"))))
 
 (defun idris-find-term-end (pos step)
   "Find an end of the term at POS, moving STEP positions in each iteration.
@@ -1171,20 +1167,19 @@ Return the position found."
     (error "Valid values for STEP are 1 or -1"))
   ;; Can't use previous-single-property-change-position because it breaks if
   ;; point is at the beginning of the term (likewise for next/end).
-  (let ((term (plist-get (text-properties-at pos) 'idris-tt-term)))
-    (when (null term)
-      (error "No term at %s" pos))
-    (save-excursion
-      (goto-char pos)
-      (while (and (string= term
-                           (plist-get (text-properties-at (point))
-                                      'idris-tt-term))
-                  (not (eobp))
-                  (not (bobp)))
-        (forward-char step))
-      (if (= step -1)
-          (1+ (point))
-        (point)))))
+  (if-let ((term (plist-get (text-properties-at pos) 'idris-tt-term)))
+      (save-excursion
+        (goto-char pos)
+        (while (and (string= term
+                             (plist-get (text-properties-at (point))
+                                        'idris-tt-term))
+                    (not (eobp))
+                    (not (bobp)))
+          (forward-char step))
+        (if (= step -1)
+            (1+ (point))
+          (point)))
+    (error "No term at %s" pos)))
 
 (defun idris-replace-term-at (position new-term)
   "Replace the term at POSITION with the new rendered term NEW-TERM.
@@ -1207,11 +1202,9 @@ of the term to replace."
   ;; The timer is necessary because of the async nature of starting the prover
   (run-with-timer 0.25 nil
                   #'(lambda ()
-                      (let ((buffer (get-buffer idris-prover-script-buffer-name)))
-                        (when buffer
-                          (let ((window (get-buffer-window buffer)))
-                            (when window
-                              (select-window window))))))))
+                      (if-let ((buffer (get-buffer idris-prover-script-buffer-name)))
+                          (if-let ((window (get-buffer-window buffer)))
+                              (select-window window))))))
 
 (defun idris-fill-paragraph (justify)
   "In literate Idris files, allow filling non-code paragraphs."
