@@ -227,7 +227,7 @@ A prefix argument SET-LINE forces loading but only up to the current line."
            (lambda (_condition)
              (when (member 'warnings-tree idris-warnings-printing)
                (idris-list-compiler-notes))))))
-    (error "Cannot find file for current buffer")))
+    (user-error "Cannot find file for current buffer")))
 
 (defun idris-view-compiler-log ()
   "Jump to the log buffer, if it is open."
@@ -235,7 +235,7 @@ A prefix argument SET-LINE forces loading but only up to the current line."
   (let ((buffer (get-buffer idris-log-buffer-name)))
     (if buffer
         (pop-to-buffer buffer)
-      (message "No Idris compiler log is currently open"))))
+      (user-error "No Idris compiler log is currently open"))))
 
 (defun idris-next-error ()
   "Jump to the next error overlay in the buffer."
@@ -244,7 +244,7 @@ A prefix argument SET-LINE forces loading but only up to the current line."
                                 #'(lambda (w1 w2) (<= (overlay-start w1) (overlay-start w2))))))
     (if warnings-forward
         (goto-char (overlay-start (car warnings-forward)))
-      (error "No warnings or errors until end of buffer"))))
+      (user-error "No warnings or errors until end of buffer"))))
 
 (defun idris-previous-error ()
   "Jump to the previous error overlay in the buffer."
@@ -253,7 +253,7 @@ A prefix argument SET-LINE forces loading but only up to the current line."
                                  #'(lambda (w1 w2) (>= (overlay-end w1) (overlay-end w2))))))
     (if warnings-backward
         (goto-char (overlay-end (car warnings-backward)))
-      (error "No warnings or errors until beginning of buffer"))))
+      (user-error "No warnings or errors until beginning of buffer"))))
 
 (defun idris-load-file-sync ()
   "Pass the current buffer's file synchronously to the inferior Idris process.
@@ -280,7 +280,7 @@ This sets the load position to point, if there is one."
             (setq idris-currently-loaded-buffer (current-buffer))
             (idris-make-clean)
             (idris-update-loaded-region (car result)))))
-    (error "Cannot find file for current buffer")))
+    (user-error "Cannot find file for current buffer")))
 
 
 
@@ -512,9 +512,9 @@ Useful for writing papers or slides."
         (fmt (completing-read "What format? " '("html", "latex") nil t nil nil "latex"))
         (width (read-string "How wide? " nil nil "80")))
     (if (<= (string-to-number width) 0)
-        (error "Width must be positive")
+        (user-error "Width must be positive")
       (if (< (length what) 1)
-          (error "Nothing to pretty-print")
+          (user-error "Nothing to pretty-print")
         (let ((text (idris-eval `(:interpret ,(concat ":pprint " fmt " " width " " what)))))
           (with-idris-info-buffer
             (insert (car text))
@@ -759,7 +759,7 @@ A plain prefix ARG causes the command to prompt for hints and recursion
                            (idris-eval `(:proof-search ,(cdr what) ,(car what) ,hints ,@depth))
                            ))))
         (if (string= result "")
-            (error "Nothing found")
+            (user-error "Nothing found")
           (idris-replace-hole-with result))))))
 
 (defun idris-proof-search-next ()
@@ -767,7 +767,7 @@ A plain prefix ARG causes the command to prompt for hints and recursion
 Idris 2 only."
   (interactive)
   (if (not proof-region-start)
-      (error "You must proof search first before looking for subsequent proof results")
+      (user-error "You must proof search first before looking for subsequent proof results")
     (let ((result (car (idris-eval `:proof-search-next))))
       (if (string= result "No more results")
           (message "No more results")
@@ -822,7 +822,7 @@ Idris 2 only."
 Idris 2 only."
   (interactive)
   (if (not def-region-start)
-      (error "You must program search first before looking for subsequent program results")
+      (user-error "You must program search first before looking for subsequent program results")
     (let ((result (car (idris-eval `:generate-def-next))))
       (if (string= result "No more results")
           (message "No more results")
@@ -838,7 +838,7 @@ Idris 2 only."
   (interactive)
   (let ((what (idris-thing-at-point)))
     (unless (car what)
-      (error "Could not find a hole at point to refine by"))
+      (user-error "Could not find a hole at point to refine by"))
     (idris-load-file-sync)
     (let ((results (car (idris-eval `(:intro ,(cdr what) ,(car what))))))
       (pcase results
@@ -850,7 +850,7 @@ Idris 2 only."
   (interactive "MRefine by: ")
   (let ((what (idris-thing-at-point)))
     (unless (car what)
-      (error "Could not find a hole at point to refine by"))
+      (user-error "Could not find a hole at point to refine by"))
     (idris-load-file-sync)
     (let ((result (car (idris-eval `(:refine ,(cdr what) ,(car what) ,name)))))
       (idris-replace-hole-with result))))
@@ -1012,7 +1012,7 @@ performed silently without confirmation from the user."
            (ibc (concat (file-name-sans-extension fname) ".ibc")))
       (if (not (member (file-name-extension fname)
                        '("idr" "lidr" "org" "markdown" "md")))
-          (error "The current file is not an Idris file")
+          (user-error "The current file is not an Idris file")
         (when (or no-confirmation (y-or-n-p (concat "Really delete " ibc "?")))
           (when (file-exists-p ibc)
             (delete-file ibc)
@@ -1257,7 +1257,7 @@ of the term to replace."
   (interactive)
   (let ((files (idris-find-file-upwards "ipkg")))
     (cond ((= (length files) 0)
-           (error "No .ipkg file found"))
+           (user-error "No .ipkg file found"))
           ((= (length files) 1)
            (find-file (car files)))
           (t (find-file (completing-read "Package file: " files nil t))))))
@@ -1277,7 +1277,7 @@ of the term to replace."
          (first-mod (read-string
                      (format "First module name (%s): " module-name-suggestion)
                      nil nil module-name-suggestion)))
-    (when (file-exists-p create-in) (error "%s already exists" create-in))
+    (when (file-exists-p create-in) (user-error "%s already exists" create-in))
     (when (string= src-dir "") (setq src-dir nil))
     (make-directory create-in t)
     (when src-dir (make-directory (concat (file-name-as-directory create-in) src-dir) t))
