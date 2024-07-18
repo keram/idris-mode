@@ -1266,6 +1266,89 @@ of the term to replace."
            (find-file (car files)))
           (t (find-file (completing-read "Package file: " files nil t))))))
 
+(defun idris-start-idris2-project ()
+  "Interactively create a new Idris2 project with ipkg file and first module."
+  (interactive)
+  (cl-flet ((project-name ()
+              (let ((project-name (string-trim (read-string "Project name: "))))
+                (when (string-match-p "[^a-zA-Z0-9_ ]" project-name)
+                  (user-error "Project name should consist only of letters, numbers, spaces and underscores"))
+                (when (string= "" project-name)
+                  (user-error "Project name can not be empty"))
+                project-name))
+            (project-directory (default-filename)
+              (let ((dir (read-directory-name "Create in: " nil default-filename nil default-filename)))
+                (when (string= "" dir)
+                  (user-error "Project directory can not be empty"))
+                (when (file-exists-p dir)
+                  (user-error "%s already exists" dir))
+                dir)))
+    (let* ((project-name (project-name))
+           (default-filename (downcase (replace-regexp-in-string "[^a-zA-Z0-9_-]" "-" project-name)))
+           (package-name default-filename)
+           (create-in (project-directory default-filename))
+           (src-dir (string-trim (read-string "Source directory (src): " nil nil "src")))
+           (authors (string-trim (read-string (format "Authors (%s): " (user-full-name)) nil nil (user-full-name))))
+           (options (string-trim (read-string "Options: ")))
+           (module-name-suggestion (replace-regexp-in-string "[^a-zA-Z0-9]+" "." (capitalize project-name)))
+           (first-mod (string-trim (read-string
+                                    (format "First module name (%s): " module-name-suggestion)
+                                    nil nil module-name-suggestion)))
+           (ipkg-file (file-truename (concat (file-name-as-directory create-in)
+                                             (concat default-filename ".ipkg"))))
+           (output-buffer (generate-new-buffer "*Idris Script Output*"))
+           (input-buffer (generate-new-buffer "*Idris Script Input*")))
+
+      (make-directory (concat (file-name-as-directory create-in) src-dir) t)
+      (with-current-buffer input-buffer
+        (insert package-name) (newline)
+        (insert authors) (newline)
+        (insert options) (newline)
+        (insert src-dir) (newline)
+
+        (call-process-region (point-min) (point-max)
+                             idris-interpreter-path
+                             nil
+                             output-buffer
+                             nil
+                             "--init"
+                             ipkg-file))
+      (let ((output (with-current-buffer output-buffer
+                      (buffer-string))))
+        (when (string-match-p "error" output)
+          (message "Idris: %s" output)))
+
+      (kill-buffer output-buffer)
+      (kill-buffer input-buffer)
+
+      ;; Decorate the generated ipkg file
+      (when (file-exists-p ipkg-file)
+        (save-excursion
+          (find-file ipkg-file)
+          (goto-char (point-min))
+          (insert "-- " project-name) (newline) (newline)
+          (when (re-search-forward "^-- version =" nil t)
+            (replace-match "version = 0.1.0"))
+          (when (and (not (string= first-mod ""))
+                     (re-search-forward "^-- modules =" nil t))
+            (replace-match "modules = ")
+            (insert first-mod))
+          (save-buffer)
+
+          ;; Create Idris file in the source directory of the project
+          ;; Default directory is the project directry
+          (when (not (string= first-mod ""))
+            (let* ((mod-path (reverse (split-string first-mod "\\.+")))
+                   (mod-dir (mapconcat #'file-name-as-directory
+                                       (cons src-dir (reverse (cdr mod-path)))
+                                       ""))
+                   (mod-filename (concat mod-dir (car mod-path) ".idr")))
+              (make-directory mod-dir t)
+              (pop-to-buffer (find-file-noselect mod-filename))
+              (insert "module " first-mod) (newline) (newline)
+              (insert "%default total") (newline)
+              (save-buffer))))))))
+
 (defun idris-start-project ()
   "Interactively create a new Idris project, complete with ipkg file."
   (interactive)

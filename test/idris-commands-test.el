@@ -466,6 +466,77 @@ closeDistance s1 s2 = closeDistance_rhs s1 s2"
         (advice-remove 'idris-find-file-upwards #'idris-find-file-upwards-stub)
         (advice-remove 'buffer-file-name #'buffer-file-name-stub)))))
 
+(defmacro idris-generate-mock-read (clauses &optional default)
+  "Generate a function with cond expression from CLAUSES and optional DEFAULT."
+  `(lambda (prompt &optional &rest _)
+     (cond
+      ,@(mapcar (lambda (clause)
+                  `((string-match-p ,(if (symbolp (car clause))
+                                         ;; Convert symbol to string and
+                                         ;; remove leading colon and
+                                         ;; replace dashes with a space
+                                         (replace-regexp-in-string
+                                          "^\\:" ""
+                                          (replace-regexp-in-string "-" " " (symbol-name (car clause))))
+                                       (car clause))
+                                    prompt)
+                    ,(cdr clause)))
+                clauses)
+      (t (or ,default "")))))
+
+(ert-deftest idris-start-idris2-project ()
+  "Test `idris-start-idris2-project' creating a project."
+
+  (skip-unless (string-match-p "idris2$" idris-interpreter-path))
+  (cl-flet ((read-string-stub (idris-generate-mock-read ((:project-name . "Idris2 Test Project")
+                                                         (:author . "Joe Doe")
+                                                         (:source-dir . "mysrc")
+                                                         (:options . "--inc")
+                                                         (:first-module . "Idris2.Test.Project"))))
+            (read-dir-stub
+              (idris-generate-mock-read
+               ((:create-in . (idris-file-name-concat "test-data" "idris2-test-project"))))))
+    (advice-add 'read-string :override #'read-string-stub)
+    (advice-add 'read-directory-name :override #'read-dir-stub)
+    (unwind-protect
+        (progn
+          (save-excursion
+            (idris-start-idris2-project))
+
+          (let* ((ipkg-file-path (idris-file-name-concat "test-data"
+                                                         "idris2-test-project"
+                                                         "idris2-test-project.ipkg"))
+                 (ipkg-buffer (find-file-noselect ipkg-file-path))
+                 (ipkg-content (with-current-buffer ipkg-buffer
+                                 (buffer-substring-no-properties (point-min) (point-max)))))
+
+            (should (string-match-p "^-- Idris2 Test Project" ipkg-content))
+            (should (string-match-p "^package idris2-test-project" ipkg-content))
+            (should (string-match-p "^version = 0.1.0" ipkg-content))
+            (should (string-match-p "^authors = \"Joe Doe\"" ipkg-content))
+            (should (string-match-p "^opts = \"--inc\"" ipkg-content))
+            (should (string-match-p "^sourcedir = \"mysrc\"" ipkg-content))
+            (kill-buffer ipkg-buffer))
+
+          (let* ((first-mod-file-path (idris-file-name-concat "test-data"
+                                                              "idris2-test-project"
+                                                              "mysrc"
+                                                              "Idris2"
+                                                              "Test"
+                                                              "Project.idr"))
+                 (first-mod-buffer (find-file-noselect first-mod-file-path))
+                 (first-mod-content (with-current-buffer first-mod-buffer
+                                      (buffer-substring-no-properties (point-min) (point-max)))))
+
+            (should (string-match-p "^module Idris2.Test.Project" first-mod-content))
+            (should (string-match-p "^%default total" first-mod-content))
+            (kill-buffer first-mod-buffer))
+
+          (delete-directory (idris-file-name-concat "test-data" "idris2-test-project") t))
+
+      (advice-remove 'read-string #'read-string-stub)
+      (advice-remove 'read-directory-name #'read-dir-stub))))
+
 ;; Tests by Yasuhiko Watanabe
 ;; https://github.com/idris-hackers/idris-mode/pull/537/files
 (idris-ert-command-action "test-data/CaseSplit.idr" idris-case-split idris-test-eq-buffer)
