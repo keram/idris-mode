@@ -717,6 +717,9 @@ Otherwise, case split as a pattern variable."
         (idris-repl-eval-string (format ":exec %s" name) 0))
     (idris-eval '(:interpret ":exec"))))
 
+(defvar-local proof-region nil
+  "The position of the last proof region.")
+
 (defun idris-replace-hole-with (expr)
   "Replace the hole under the cursor by some EXPR."
   (save-excursion
@@ -724,12 +727,8 @@ Otherwise, case split as a pattern variable."
           (end (progn (forward-char) (search-forward-regexp "[^a-zA-Z0-9_']")
                       (backward-char) (point))))
       (delete-region start end))
-    (insert expr)))
-
-(defvar-local proof-region-start nil
-  "The start position of the last proof region.")
-(defvar-local proof-region-end nil
-  "The end position of the last proof region.")
+    (insert expr)
+    (setq proof-region (cons (- (point) (length expr)) (point)))))
 
 (defun idris-proof-search (&optional arg)
   "Invoke the proof search.
@@ -750,11 +749,9 @@ A plain prefix ARG causes the command to prompt for hints and recursion
         (what (idris-thing-at-point)))
     (when (car what)
       (idris-load-file-sync)
-
       (let ((result (car (if (> idris-protocol-version 1)
                              (idris-eval `(:proof-search ,(cdr what) ,(car what)))
-                           (idris-eval `(:proof-search ,(cdr what) ,(car what) ,hints ,@depth))
-                           ))))
+                           (idris-eval `(:proof-search ,(cdr what) ,(car what) ,hints ,@depth))))))
         (if (string= result "")
             (user-error "Nothing found")
           (idris-replace-hole-with result))))))
@@ -763,17 +760,16 @@ A plain prefix ARG causes the command to prompt for hints and recursion
   "Replace the previous proof search result with the next one, if it exists.
 Idris 2 only."
   (interactive)
-  (if (not proof-region-start)
+  (if (not proof-region)
       (user-error "You must proof search first before looking for subsequent proof results")
-    (let ((result (car (idris-eval `:proof-search-next))))
-      (if (string= result "No more results")
-          (message "No more results")
+    (if-let ((result (car (idris-eval :proof-search-next))))
         (save-excursion
-          (goto-char proof-region-start)
-          (delete-region proof-region-start proof-region-end)
-          (setq proof-region-start (point))
+          (goto-char (car proof-region))
+          (delete-region (car proof-region) (cdr proof-region))
           (insert result)
-          (setq proof-region-end (point)))))))
+          (setq proof-region (cons (- (point) (length result)) (point))))
+      (setq proof-region nil)
+      (message "No more results"))))
 
 (defvar-local def-region-start nil)
 (defvar-local def-region-end nil)

@@ -538,6 +538,42 @@ closeDistance s1 s2 = closeDistance_rhs s1 s2"
       (advice-remove 'read-string #'read-string-stub)
       (advice-remove 'read-directory-name #'read-dir-stub))))
 
+(ert-deftest idris-test-idris-proof-search-next ()
+  "Test `idris-proof-search-next'."
+  (cl-flet ((idris-load-file-sync-stub () nil)
+            (idris-eval-stub (sexp &optional no-errors)
+              (apply #'funcall eval-result)))
+    (advice-add 'idris-load-file-sync :override #'idris-load-file-sync-stub)
+    (advice-add 'idris-eval :override #'idris-eval-stub)
+    (unwind-protect
+        (progn
+          (with-temp-buffer
+            (insert "Matrix : Nat -> Nat -> Type
+Matrix i j = ?hole1 ?hole2")
+            (goto-char (point-min))
+            (re-search-forward "?hole")
+
+            (let ((eval-result (list #'identity '("j" 2))))
+              (funcall-interactively 'idris-proof-search))
+
+            (should (string= "Matrix : Nat -> Nat -> Type
+Matrix i j = j ?hole2"
+                             (buffer-substring-no-properties (point-min) (point-max))))
+
+            (let ((eval-result (list #'identity '("i" 2))))
+              (funcall-interactively 'idris-proof-search-next))
+
+            (should (string= "Matrix : Nat -> Nat -> Type
+Matrix i j = i ?hole2"
+                             (buffer-substring-no-properties (point-min) (point-max))))
+
+            (let ((eval-result (list #'error "%s (synchronous Idris evaluation failed)" "No more results")))
+              (should-error
+               (funcall-interactively 'idris-proof-search-next)))))
+
+      (advice-remove 'idris-load-file-sync #'idris-load-file-sync-stub)
+      (advice-remove 'idris-eval #'idris-eval-stub))))
+
 ;; Tests by Yasuhiko Watanabe
 ;; https://github.com/idris-hackers/idris-mode/pull/537/files
 (idris-ert-command-action "test-data/CaseSplit.idr" idris-case-split idris-test-eq-buffer)
