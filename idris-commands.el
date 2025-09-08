@@ -911,6 +911,13 @@ type-correct, so loading will fail."
           (list start end candidates
                 :exclusive 'no))))))
 
+(defun idris-hide-empty-notes  ()
+  "Hide empty notes buffer if it is displayed in one of the windows."
+  (let* ((buffer (get-buffer idris-notes-buffer-name))
+         (window (and buffer (get-buffer-window buffer))))
+    (if (and window (= 0 (buffer-size buffer)))
+      (quit-window nil window))))
+
 (defun idris-list-holes ()
   "Get a list of currently open holes."
   (interactive)
