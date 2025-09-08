@@ -186,16 +186,14 @@ If ALWAYS-INSERT is non-nil, always insert a prompt at the end of the buffer."
       (idris-repl-insert-prompt)
       (insert current-input))))
 
-(autoload 'idris-load-file "idris-commands.el")
+(autoload 'idris-load-file-sync "idris-commands.el")
 ;;;###autoload
 (defun idris-switch-to-repl ()
-  "Select the output buffer and scroll to bottom."
+  "Load the current Idris file buffer and jump to the Idris REPL."
   (interactive)
-  (if (and buffer-file-name
-           ;; in Emacs 29.1 > we can use string-equal-ignore-case
-           (string= "idr" (downcase (file-name-extension buffer-file-name))))
+  (if (or (idris-idr-p) (idris-lidr-p))
       (idris-load-file-sync)
-    (user-error "This command can only be run from a buffer visiting an Idris `.idr' file"))
+    (user-error "This command can only be run from a buffer visiting an Idris `.idr' or `.lidr' file"))
   (pop-to-buffer (idris-repl-buffer))
   (goto-char (point-max)))
 
