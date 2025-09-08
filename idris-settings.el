@@ -256,13 +256,15 @@ change to ordinary prover interaction."
   :options '(idris-set-current-pretty-print-width))
 
 (defcustom idris-load-file-success-hook '(idris-list-holes
-                                          idris-set-current-pretty-print-width)
+                                          idris-set-current-pretty-print-width
+                                          idris-hide-empty-notes)
   "Functions to call when loading a file is successful.
 When `idris-hole-show-on-load' is set to nil the function `idris-list-holes'
 will be removed from the list automatically and will not be executed."
   :type 'hook
   :options '(idris-list-holes
-             idris-set-current-pretty-print-width)
+             idris-set-current-pretty-print-width
+             idris-hide-empty-notes)
   :group 'idris)
 
 (defcustom idris-prover-success-hook '(idris-list-holes)
