@@ -756,7 +756,7 @@ If no indentation is found, return the empty string."
 (defun idris-replace-hole-with (expr)
   "Replace the hole under the cursor by some EXPR."
   (save-excursion
-    (let ((start (progn (search-backward "?") (point)))
+    (let ((start (search-backward "?"))
           (end (progn (forward-char) (search-forward-regexp "[^a-zA-Z0-9_']")
                       (backward-char) (point))))
       (delete-region start end))
