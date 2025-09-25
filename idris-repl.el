@@ -194,7 +194,7 @@ If ALWAYS-INSERT is non-nil, always insert a prompt at the end of the buffer."
   (if (and buffer-file-name
            ;; in Emacs 29.1 > we can use string-equal-ignore-case
            (string= "idr" (downcase (file-name-extension buffer-file-name))))
-      (idris-load-file)
+      (idris-load-file-sync)
     (user-error "This command can only be run from a buffer visiting an Idris `.idr' file"))
   (pop-to-buffer (idris-repl-buffer))
   (goto-char (point-max)))
