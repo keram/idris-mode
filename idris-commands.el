@@ -594,7 +594,7 @@ If no indentation is found, return the empty string."
     (forward-line (1- (cdr thing)))
     (goto-char (line-beginning-position))
     (re-search-forward (if (> idris-protocol-version 1)
-                           "^\\(\\s-*\\)"
+                           "\\(^\\s-*\\)"
                          "\\(^>?\\s-*\\)")
                        nil t)
     (or (match-string 1) "")))
