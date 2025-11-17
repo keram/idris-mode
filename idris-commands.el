@@ -201,33 +201,35 @@ A prefix argument SET-LINE forces loading but only up to the current line."
           (with-current-buffer idris-notes-buffer-name
             (let ((inhibit-read-only t)) (erase-buffer))))
         ;; Actually do the loading
-        (let* ((dir-and-fn (idris-filename-to-load))
-               (fn (cdr dir-and-fn))
-               (srcdir (car dir-and-fn))
-               (idris-semantic-source-highlighting (idris-buffer-semantic-source-highlighting)))
-          (setq idris-currently-loaded-buffer nil)
-          (idris-switch-working-directory srcdir)
-          (idris-delete-ibc t) ;; delete the ibc to avoid interfering with partial loads
-          (idris-toggle-semantic-source-highlighting)
-          (idris-eval-async
-           (if idris-load-to-here
-               `(:load-file ,fn ,(idris-get-line-num idris-load-to-here))
-             `(:load-file ,fn))
-           (lambda (result)
-             (pcase result
-               (`(:highlight-source ,hs)
-                (idris-highlight-source-file hs))
-               (_ (idris-make-clean)
-                  (idris-update-options-cache)
-                  (setq idris-currently-loaded-buffer (current-buffer))
-                  (when (member 'warnings-tree idris-warnings-printing)
-                    (idris-list-compiler-notes))
-                  (run-hooks 'idris-load-file-success-hook)
-                  (idris-update-loaded-region result))))
-           (lambda (_condition)
-             (when (member 'warnings-tree idris-warnings-printing)
-               (idris-list-compiler-notes))))))
+        (idris--load-file (idris-filename-to-load)))
     (error "Cannot find file for current buffer")))
+
+(defun idris--load-file (dir-and-fn)
+  (let* ((fn (cdr dir-and-fn))
+         (srcdir (car dir-and-fn))
+         (idris-semantic-source-highlighting (idris-buffer-semantic-source-highlighting)))
+    (setq idris-currently-loaded-buffer nil)
+    (idris-switch-working-directory srcdir)
+    (idris-delete-ibc t) ;; delete the ibc to avoid interfering with partial loads
+    (idris-toggle-semantic-source-highlighting)
+    (idris-eval-async
+     (if idris-load-to-here
+         `(:load-file ,fn ,(idris-get-line-num idris-load-to-here))
+       `(:load-file , (expand-file-name fn srcdir)))
+     (lambda (result)
+       (pcase result
+         (`(:highlight-source ,hs)
+          (idris-highlight-source-file hs))
+         (_ (idris-make-clean)
+            (idris-update-options-cache)
+            (setq idris-currently-loaded-buffer (current-buffer))
+            (when (member 'warnings-tree idris-warnings-printing)
+              (idris-list-compiler-notes))
+            (run-hooks 'idris-load-file-success-hook)
+            (idris-update-loaded-region result))))
+     (lambda (_condition)
+       (when (member 'warnings-tree idris-warnings-printing)
+         (idris-list-compiler-notes))))))
 
 (defun idris-view-compiler-log ()
   "Jump to the log buffer, if it is open."
