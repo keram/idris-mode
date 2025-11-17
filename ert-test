@@ -1,0 +1,6 @@
+match=${1:-t}
+idris=${2:-idris2}
+emacs --batch -Q -nw -L ./ -L ../../elpa/prop-menu-20150728.1118 -l ert -l idris-tests.el \
+-eval '(setq idris-interpreter-path "'"${idris}"'")' \
+-eval '(ert-run-tests-batch-and-exit "'"${match}"'")'
+# -eval '(let ((ert-quiet t)) (ert-run-tests-batch-and-exit "'"${match}"'"))'
