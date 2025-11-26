@@ -306,8 +306,7 @@ versions cannot deal with that."
 
 (defun idris-eval (sexp &optional no-errors)
   "Evaluate SEXP on the inferior Idris and return the result.
-If `NO-ERRORS' is non-nil, don't trigger warning buffers and
- don't call `ERROR' if there was an Idris error."
+If `NO-ERRORS' is non-nil, don't call `ERROR' if there was an Idris error."
   (let* ((tag (gensym (format "idris-result-%d-"
                               (1+ idris-continuation-counter))))
          (idris-stack-eval-tags (cons tag idris-stack-eval-tags)))
