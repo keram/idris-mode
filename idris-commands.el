@@ -275,14 +275,11 @@ If NO-ERRORS is passed the warnings from Idris will be ignored."
                (srcdir (car dir-and-fn)))
           (setq idris-currently-loaded-buffer nil)
           (idris-switch-working-directory srcdir)
-          (let* ((ty (idris-eval
-                      (if idris-load-to-here
-                          `(:load-file ,fn ,(idris-get-line-num idris-load-to-here))
-                        `(:load-file ,fn))
-                      no-errors))
-                 (result (car ty)))
-            (when (member 'warnings-tree idris-warnings-printing)
-              (idris-list-compiler-notes))
+          (let ((result (idris-user-eval
+                         (if idris-load-to-here
+                             `(:load-file ,fn ,(idris-get-line-num idris-load-to-here))
+                           `(:load-file ,fn))
+                         no-errors)))
             (unless (eq :error result)
               (idris-update-options-cache)
               (setq idris-currently-loaded-buffer (current-buffer))
@@ -1426,12 +1423,14 @@ of the term to replace."
                          (idris-show-core-term
                           (idris--active-term-beginning tt-term pos)))))))))))
 
-(defun idris-user-eval (what)
+(defun idris-user-eval (what &optional no-errors)
   "Send WHAT to Idris process and return first item in the response.
 
 When `idris-warnings-printing' includes `warnings-tree' it also
- calls `idris-list-compiler-notes' to display or update existing Idris notes"
-  (let ((ty (idris-eval what)))
+ calls `idris-list-compiler-notes' to display or update existing Idris notes.
+
+If `NO-ERRORS' is non-nil, don't call `ERROR' if there was an Idris error."
+  (let ((ty (idris-eval what no-errors)))
     (when (member 'warnings-tree idris-warnings-printing)
       (idris-list-compiler-notes))
     (car ty)))
