@@ -275,19 +275,20 @@ If NO-ERRORS is passed the warnings from Idris will be ignored."
                (srcdir (car dir-and-fn)))
           (setq idris-currently-loaded-buffer nil)
           (idris-switch-working-directory srcdir)
-          (let ((result
-                 (idris-eval
-                  (if idris-load-to-here
-                      `(:load-file ,fn ,(idris-get-line-num idris-load-to-here))
-                    `(:load-file ,fn))
-                  no-errors)))
-            (idris-update-options-cache)
-            (setq idris-currently-loaded-buffer (current-buffer))
-            (idris-make-clean)
-            (idris-update-loaded-region (car result)))))
+          (let* ((ty (idris-eval
+                      (if idris-load-to-here
+                          `(:load-file ,fn ,(idris-get-line-num idris-load-to-here))
+                        `(:load-file ,fn))
+                      no-errors))
+                 (result (car ty)))
+            (when (member 'warnings-tree idris-warnings-printing)
+              (idris-list-compiler-notes))
+            (unless (eq :error result)
+              (idris-update-options-cache)
+              (setq idris-currently-loaded-buffer (current-buffer))
+              (idris-make-clean)
+              (idris-update-loaded-region result)))))
     (error "Cannot find file for current buffer")))
-
-
 
 (defun idris-info-for-name (command name)
   "Pass to Idris compiler COMMAND with NAME as argument and display the result."

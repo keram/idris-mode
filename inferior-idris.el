@@ -325,11 +325,11 @@ If `NO-ERRORS' is non-nil, don't trigger warning buffers and
               (error "Reply to canceled synchronous eval request tag=%S sexp=%S"
                      tag sexp))))
          ((:error condition &optional _spans)
-          (if no-errors
-              (throw tag (list #'identity nil))
-            (when (member 'warnings-tree idris-warnings-printing)
+          (when (member 'warnings-tree idris-warnings-printing)
               (idris-list-compiler-notes))
-            (throw tag (list #'error "%s (synchronous Idris evaluation failed)" condition)))))
+          (throw tag (if no-errors
+                         (list #'identity (cons :error condition))
+                       (list #'user-error "%s (synchronous Idris evaluation failed)" condition)))))
        (let ((debug-on-quit t)
              (inhibit-quit nil))
          (while t
