@@ -48,7 +48,6 @@
           (when window (quit-window nil window))
         (idris-tree-insert root "")
         (insert "\n\n")
-        (message "Press q to close, return or mouse on error to navigate to source")
         (goto-char (point-min))
         (display-buffer idris-notes-buffer-name)))))
 
