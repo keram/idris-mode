@@ -192,7 +192,7 @@ If ALWAYS-INSERT is non-nil, always insert a prompt at the end of the buffer."
   "Load the current Idris file buffer and jump to the Idris REPL."
   (interactive)
   (if (or (idris-idr-p) (idris-lidr-p))
-      (idris-load-file-sync)
+      (idris-load-file-sync t)
     (user-error "This command can only be run from a buffer visiting an Idris `.idr' or `.lidr' file"))
   (pop-to-buffer (idris-repl-buffer))
   (goto-char (point-max)))
