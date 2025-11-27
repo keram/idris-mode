@@ -304,7 +304,6 @@ versions cannot deal with that."
 (defvar idris-stack-eval-tags nil
   "List of stack-tags of continuations waiting on the stack.")
 
-(autoload 'idris-list-compiler-notes "idris-commands.el")
 (defun idris-eval (sexp &optional no-errors)
   "Evaluate SEXP on the inferior Idris and return the result.
 If `NO-ERRORS' is non-nil, don't trigger warning buffers and
@@ -327,8 +326,6 @@ If `NO-ERRORS' is non-nil, don't trigger warning buffers and
          ((:error condition &optional _spans)
           (if no-errors
               (throw tag (list #'identity nil))
-            (when (member 'warnings-tree idris-warnings-printing)
-              (idris-list-compiler-notes))
             (throw tag (list #'error "%s (synchronous Idris evaluation failed)" condition)))))
        (let ((debug-on-quit t)
              (inhibit-quit nil))
