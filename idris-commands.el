@@ -271,7 +271,7 @@ This sets the load position to point, if there is one."
           (idris-switch-working-directory srcdir)
           (idris-toggle-semantic-source-highlighting)
           (let ((result
-                 (idris-user-eval
+                 (idris-eval
                   (if idris-load-to-here
                       `(:load-file ,fn ,(idris-get-line-num idris-load-to-here))
                     `(:load-file ,fn))))
@@ -288,6 +288,8 @@ This sets the load position to point, if there is one."
   (let* ((ty (idris-eval (list command name)))
          (result (car ty))
          (formatting (cdr ty)))
+    (when (member 'warnings-tree idris-warnings-printing)
+      (idris-list-compiler-notes))
     (idris-show-info (format "%s" result) formatting)))
 
 
@@ -1401,8 +1403,13 @@ of the term to replace."
 (defun idris-user-eval (what &optional no-errors)
   "Send WHAT to Idris process and return first item in the response.
 
+When `idris-warnings-printing' includes `warnings-tree' it also
+ calls `idris-list-compiler-notes' to display or update existing Idris notes.
+
 If `NO-ERRORS' is non-nil, don't raise `ERROR' if there was an Idris error."
   (let ((ty (idris-eval what no-errors)))
+    (when (member 'warnings-tree idris-warnings-printing)
+      (idris-list-compiler-notes))
     (car ty)))
 
 (provide 'idris-commands)
