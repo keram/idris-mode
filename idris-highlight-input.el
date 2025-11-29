@@ -107,28 +107,11 @@ See Info node `(elisp)Overlay Properties' to understand how ARGS are used."
                                       end-line end-col
                                       props)))))
 
-(defun idris-highlight-input-region-debug (start-line start-col end-line end-col highlight)
-  (when (not (or (> end-line start-line)
-                 (and (= end-line start-line)
-                      (> end-col start-col))))
-    (message "Not highlighting absurd span %s:%s-%s:%s with %s"
-             start-line start-col
-             end-line end-col
-             highlight)))
-
 (defun idris-toggle-semantic-source-highlighting ()
   "Turn on/off semantic highlighting.
-This is controled by value of `idris-semantic-source-highlighting' variable.
-When the value is `debug' additional checks are performed on received data."
+This is controled by value of `idris-semantic-source-highlighting' variable."
   (if idris-semantic-source-highlighting
-      (progn
-        (if (eq idris-semantic-source-highlighting 'debug)
-            (advice-add 'idris-highlight-input-region
-                        :before-until
-                        #'idris-highlight-input-region-debug)
-          (advice-remove 'idris-highlight-input-region
-                         #'idris-highlight-input-region-debug))
-        (advice-remove 'idris-highlight-source-file #'ignore))
+      (advice-remove 'idris-highlight-source-file #'ignore)
     (advice-add 'idris-highlight-source-file :around #'ignore)))
 
 (defun idris-buffer-semantic-source-highlighting ()

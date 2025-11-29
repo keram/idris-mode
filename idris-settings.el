@@ -65,11 +65,9 @@ Advanced users may wish to disable this."
   :type 'boolean)
 
 (defcustom idris-semantic-source-highlighting t
-  "Use the Idris compiler's semantic source information to highlight Idris code.
-If `debug', log failed highlighting to buffer `*Messages*'."
+  "Use the Idris compiler's semantic source information to highlight Idris code."
   :group 'idris
-  :type '(choice (boolean :tag "Enable")
-                 (const :tag "Debug" debug)))
+  :type 'boolean)
 
 (defcustom idris-semantic-source-highlighting-max-buffer-size 32768 ;; (expt 2 15)
   "Disable semantic source highlighting if the buffer exceeds the allotted size.
