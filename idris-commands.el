@@ -1003,7 +1003,8 @@ https://github.com/clojure-emacs/cider"
         idris-rex-continuations '()
         idris-process-current-working-directory nil
         idris-protocol-version 0
-        idris-protocol-version-minor 0))
+        idris-protocol-version-minor 0
+        idris--semantic-source-highlighting t))
 
 (defun idris-delete-ibc (no-confirmation)
   "Delete the IBC file for the current buffer.
