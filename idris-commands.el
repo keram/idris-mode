@@ -265,9 +265,13 @@ This sets the load position to point, if there is one."
           (idris-load-to (point)))
         (let* ((dir-and-fn (idris-filename-to-load))
                (fn (cdr dir-and-fn))
-               (srcdir (car dir-and-fn)))
+               (srcdir (car dir-and-fn))
+               (idris-semantic-source-highlighting
+                (and idris-x-enable-semantic-source-highlighting-in-sync-file-load
+                     (idris-buffer-semantic-source-highlighting))))
           (setq idris-currently-loaded-buffer nil)
           (idris-switch-working-directory srcdir)
+          (idris-toggle-semantic-source-highlighting)
           (let ((result
                  (idris-eval
                   (if idris-load-to-here

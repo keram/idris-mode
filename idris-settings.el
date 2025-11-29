@@ -75,6 +75,16 @@ This is to reduce lag when loading large Idris files."
   :group 'idris
   :type 'integer)
 
+(defcustom idris-x-enable-semantic-source-highlighting-in-sync-file-load nil
+  "*Experimental*
+Enable semantic source highlighting during synchronous file loads triggered
+by Idris commands.
+
+This may improve visual feedback, but can impact responsiveness depending
+on file size and command frequency."
+  :group 'idris
+  :type 'boolean)
+
 (defcustom idris-log-events nil
   "If non-nil, communications between Emacs and Idris are logged.
 
