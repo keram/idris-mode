@@ -267,9 +267,11 @@ If NO-ERRORS is passed the warnings from Idris will be ignored."
           (idris-load-to (point)))
         (let* ((dir-and-fn (idris-filename-to-load))
                (fn (cdr dir-and-fn))
-               (srcdir (car dir-and-fn)))
+               (srcdir (car dir-and-fn))
+               (idris-semantic-source-highlighting (idris-buffer-semantic-source-highlighting)))
           (setq idris-currently-loaded-buffer nil)
           (idris-switch-working-directory srcdir)
+          (idris-toggle-semantic-source-highlighting)
           (let ((result
                  (idris-eval
                   (if idris-load-to-here
