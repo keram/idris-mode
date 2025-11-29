@@ -28,6 +28,11 @@
 (require 'idris-common-utils)
 (require 'idris-settings)
 
+(defvar idris--semantic-source-highlighting t
+  "Initial state of syntax highligt when connecting to Idris process.
+
+Used to ensure we send the right value in `:enable-syntax' option.")
+
 (defun idris-highlight-remove-overlays (&optional buffer)
   "Remove all Idris highlighting overlays from BUFFER.
 Use the current buffer if BUFFER is nil."
@@ -110,9 +115,16 @@ See Info node `(elisp)Overlay Properties' to understand how ARGS are used."
 (defun idris-toggle-semantic-source-highlighting ()
   "Turn on/off semantic highlighting.
 This is controled by value of `idris-semantic-source-highlighting' variable."
-  (if idris-semantic-source-highlighting
-      (advice-remove 'idris-highlight-source-file #'ignore)
-    (advice-add 'idris-highlight-source-file :around #'ignore)))
+  (unless (eq idris-semantic-source-highlighting
+              idris--semantic-source-highlighting)
+    (if idris-semantic-source-highlighting
+        (if (>=-protocol-version 2 1)
+            (idris-eval '(:enable-syntax :True))
+          (advice-remove 'idris-highlight-source-file #'ignore))
+      (if (>=-protocol-version 2 1)
+          (idris-eval '(:enable-syntax :False))
+        (advice-add 'idris-highlight-source-file :around #'ignore)))
+    (setq idris--semantic-source-highlighting idris-semantic-source-highlighting)))
 
 (defun idris-buffer-semantic-source-highlighting ()
   "Return nil if current buffer size is larger than set limit.
