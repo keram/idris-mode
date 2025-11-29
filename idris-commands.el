@@ -945,8 +945,7 @@ type-correct, so loading will fail."
 (defun idris-list-compiler-notes ()
   "Show the compiler notes in tree view."
   (interactive)
-  (with-temp-message "Preparing compiler note tree..."
-    (idris-compiler-notes-list-show (reverse idris-raw-warnings))))
+  (idris-compiler-notes-list-show (reverse idris-raw-warnings)))
 
 (defun idris-kill-buffers ()
   ;; not killing :events since it it tremendously useful for debuging
