@@ -274,7 +274,7 @@ If NO-ERRORS is passed the warnings from Idris will be ignored."
           (setq idris-currently-loaded-buffer nil)
           (idris-switch-working-directory srcdir)
           (let ((result
-                 (idris-user-eval
+                 (idris-eval
                   (if idris-load-to-here
                       `(:load-file ,fn ,(idris-get-line-num idris-load-to-here))
                     `(:load-file ,fn))
