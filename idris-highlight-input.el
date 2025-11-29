@@ -138,5 +138,12 @@ Otherwise return current value of `idris-semantic-source-highlighting'"
              "Customize `idris-semantic-source-highlighting-max-buffer-size' to enable it.")
     nil))
 
+(defun idris-syntax-highlight-event-hook-function (event)
+  (pcase event
+    (`(:output (:ok (:highlight-source ,hs)) ,_target)
+     (idris-highlight-source-file hs)
+     t)
+    (_ nil)))
+
 (provide 'idris-highlight-input)
 ;;; idris-highlight-input.el ends here

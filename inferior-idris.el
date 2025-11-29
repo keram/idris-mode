@@ -84,6 +84,7 @@ This is maintained to restart Idris when the arguments change.")
     (add-hook 'idris-event-hooks 'idris-log-hook-function)
     (add-hook 'idris-event-hooks 'idris-warning-event-hook-function)
     (add-hook 'idris-event-hooks 'idris-prover-event-hook-function)
+    (add-hook 'idris-event-hooks 'idris-syntax-highlight-event-hook-function)
 
     (if idris-hole-show-on-load
         (progn
