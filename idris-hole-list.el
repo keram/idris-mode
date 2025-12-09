@@ -79,29 +79,39 @@ Invokes `idris-hole-list-mode-hook'."
   "Return the Idris hole buffer, creating one if there is not one."
   (get-buffer-create idris-hole-list-buffer-name))
 
+(defun idris-update-holes-buffer-content (buffer hole-info)
+  (with-current-buffer buffer
+    (idris-hole-list-mode)
+    (let ((buffer-read-only nil))
+      (erase-buffer)
+      (insert (propertize "Holes" 'face 'idris-info-title-face) "\n\n")
+      (when idris-show-help-text
+        (insert "This buffer displays the unsolved holes from the currently-loaded code. ")
+        (insert (concat "Press the "
+                        (if idris-enable-elab-prover "[E]" "[P]")
+                        " buttons to solve the holes interactively in the prover."))
+        (let ((fill-column 80))
+          (fill-region (point-min) (point-max)))
+        (insert "\n\n"))
+      (if (null hole-info)
+          (insert "No holes found.")
+        (dolist (tree (mapcar #'idris-tree-for-hole hole-info))
+          (idris-tree-insert tree "")
+          (insert "\n\n")))
+      (goto-char (point-min)))))
+
 (defun idris-hole-list-show (hole-info)
   (if (null hole-info)
       (progn (message "No holes found!")
              (idris-hole-list-quit))
-    (with-current-buffer (idris-hole-list-buffer)
-      (idris-hole-list-mode)
-      (let ((buffer-read-only nil))
-        (erase-buffer)
-        (insert (propertize "Holes" 'face 'idris-info-title-face) "\n\n")
-        (when idris-show-help-text
-          (insert "This buffer displays the unsolved holes from the currently-loaded code. ")
-          (insert (concat "Press the "
-                          (if idris-enable-elab-prover "[E]" "[P]")
-                          " buttons to solve the holes interactively in the prover."))
-          (let ((fill-column 80))
-            (fill-region (point-min) (point-max)))
-          (insert "\n\n"))
-        (dolist (tree (mapcar #'idris-tree-for-hole hole-info))
-          (idris-tree-insert tree "")
-          (insert "\n\n"))
-        (message "Press q to close")
-        (goto-char (point-min))))
+    (idris-update-holes-buffer-content (idris-hole-list-buffer) hole-info)
     (display-buffer (idris-hole-list-buffer))))
+
+(defun idris-update-holes-buffer ()
+  "Update content of Idris holes buffer if it exists."
+  (when-let* ((buffer (get-buffer idris-hole-list-buffer-name))
+              (ty (idris-eval '(:metavariables 80) t)))
+    (idris-update-holes-buffer-content buffer (car ty))))
 
 (defun idris-hole-tree-printer (tree)
   "Print TREE, formatted for holes."

@@ -1312,6 +1312,124 @@ of the term to replace."
       (newline)
       (save-buffer))))
 
+(defvar hole-counter 0
+  "Number used to construct the name of the next hole created by `idris-make-hole'.
+
+Inspired by `gensym'.")
+
+(defvar hole-prefix "idris_"
+  "A prefix of `idris-mode` generated hole.")
+
+(defun idris--hole-name ()
+  "Generates unique hole name based on `hole-prefix' and `hole-counter'."
+  (format "?%sh%d"
+          hole-prefix
+          (prog1 hole-counter
+            (setq hole-counter (1+ hole-counter)))))
+
+(defun idris-make-hole ()
+  "Add hole string at point.
+
+If active region selected replaces the region with the hole."
+  (interactive)
+  (when (use-region-p)
+    (kill-region (region-beginning) (region-end)))
+  (insert (idris--hole-name)))
+
+(defun idris-make-case ()
+  "Insert a `case _ of ...` at point.
+
+If active region is selected the `_` is replaced with content of the region
+and `make-case` called."
+  (interactive)
+  (let ((region (when (use-region-p)
+                  (kill-region (region-beginning) (region-end))
+                  (car kill-ring))))
+    (idris-make-hole)
+    (idris-make-cases-from-hole)
+    (when (not (null region))
+      (insert region)
+      (delete-char 1)
+      (forward-word 2)
+      (idris-case-split))))
+
+(defun idris--line-comment-beginning ()
+  "Return the position of the first actual comment on the line, or nil."
+  (save-match-data
+    (save-excursion
+      (beginning-of-line)
+      (let ((eol (line-end-position))
+            (found nil))
+        (while (and (not found)
+                    (re-search-forward "--" eol t))
+          (let ((state (syntax-ppss)))
+            ;; nth 4 is non-nil if inside a comment
+            ;; nth 3 is non-nil if inside a string
+            ;; We want the start of a comment, which is NOT in a string
+            (when (and (not (nth 3 state))
+                       (nth 4 state))
+              (setq found (match-beginning 0)))))
+        found))))
+
+(defun idris-comment-and-make-hole ()
+  "Replace code at point or in the active region with an Idris hole.
+
+The original code is preserved as a comment annotated with the hole name.
+Only single-line regions are supported."
+  (interactive)
+  (let* ((comment-beg (idris--line-comment-beginning))
+         (region-beg (if (use-region-p) (region-beginning) (point)))
+         (region-end (if (use-region-p)
+                         (region-end)
+                       (save-excursion
+                         (if (and comment-beg (< (point) comment-beg))
+                             (goto-char comment-beg)
+                           (end-of-line))
+                         (skip-chars-backward " \t")
+                         (point))))
+         (region (buffer-substring-no-properties region-beg region-end)))
+
+    (when (string-blank-p region)
+      (user-error "Can't make a hole from nothing"))
+    (when (string-match-p "[\r\n]" region)
+      (user-error "Currently can generate a hole only from single line regions"))
+
+    (let ((hole-name (idris--hole-name)))
+      (atomic-change-group
+        (delete-region region-beg region-end)
+        (insert hole-name)
+        (save-excursion
+          (end-of-line)
+          (if comment-beg
+              (newline)
+            (insert " "))
+          (insert "-- " hole-name ": " region))))))
+
+(defun idris-restore-code-from-hole ()
+  "Restore code replaced with a hole at point."
+  (interactive)
+  (when (not (save-excursion
+               (skip-chars-backward "[:alnum:]_")
+               (eq (char-before) ??)))
+    (user-error "The thing at point must be a hole"))
+  (let* ((hole-name (thing-at-point 'symbol t))
+         (code-block (save-excursion
+                       (unless (search-forward (concat "-- ?" hole-name ": ") nil t)
+                         (user-error "No commented code found for hole ?%s" hole-name))
+                       (buffer-substring-no-properties (point) (line-end-position))))
+         (hole-bounds (bounds-of-thing-at-point 'symbol)))
+    (atomic-change-group
+      (delete-region (1- (car hole-bounds)) (cdr hole-bounds))
+      (insert code-block)
+      (save-excursion
+        (search-forward (concat "-- ?" hole-name ": "))
+        (search-backward "--")
+        (delete-region (point) (line-end-position))
+        (beginning-of-line)
+        (when (looking-at "[[:space:]]*$")
+          (delete-region (point)
+                         (min (1+ (line-end-position)) (point-max))))))))
+
 ;;; Pretty-printer stuff
 
 (defun idris-set-current-pretty-print-width ()
