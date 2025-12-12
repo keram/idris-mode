@@ -170,10 +170,11 @@ Invokes `idris-mode-hook'."
 
 ;; Automatically use idris-mode for .idr and .lidr files.
 ;;;###autoload
-(push '("\\.idr$" . idris-mode) auto-mode-alist)
+(add-to-list 'auto-mode-alist '("\\.idr$" . idris-mode))
 ;;;###autoload
-(push '("\\.lidr$" . idris-mode) auto-mode-alist)
-
+(add-to-list 'auto-mode-alist '("\\.lidr$" . idris-mode))
+;;;###autoload
+(add-to-list 'interpreter-mode-alist (cons idris-interpreter-path 'idris-mode))
 
 (provide 'idris-mode)
 ;;; idris-mode.el ends here
