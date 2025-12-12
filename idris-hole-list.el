@@ -30,6 +30,7 @@
 (require 'idris-keys)
 (require 'idris-warnings-tree)
 (require 'idris-settings)
+(require 'idris-prover)
 (require 'idris-xref)
 
 (defvar idris-hole-list-buffer-name (idris-buffer-name :holes)
@@ -110,10 +111,6 @@ Invokes `idris-hole-list-mode-hook'."
     (insert " ")
     (apply #'insert-button (idris-tree.button tree))
     (insert (idris-tree.after-button tree))))
-
-
-;;; Prevent circularity error
-(autoload 'idris-prove-hole "idris-commands.el")
 
 (defun idris-tree-for-hole (hole)
   "Generate a tree for HOLE.
