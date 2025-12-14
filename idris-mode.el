@@ -75,7 +75,8 @@
     ["Compile and execute" idris-compile-and-execute]
     ["Delete IBC file" idris-delete-ibc t]
     ["View compiler log" idris-view-compiler-log (get-buffer idris-log-buffer-name)]
-    ["Quit inferior Idris process" idris-quit t]
+    ["Quit inferior Idris process" idris-quit :visible idris-process]
+    ["Start inferior Idris process" idris-run :visible (not idris-process)]
     "-----------------"
     ["Add initial match clause to type declaration" idris-add-clause t]
     ["Add missing cases" idris-add-missing t]
