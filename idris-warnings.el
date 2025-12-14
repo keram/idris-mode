@@ -125,8 +125,7 @@ is mostly the same as (startline startcolumn)"
     (overlay-put overlay 'face 'idris-warning-face)
     (overlay-put overlay 'mouse-face 'highlight)
     (push overlay idris-warnings)
-    (unless (memq (current-buffer) idris-warnings-buffers)
-      (push (current-buffer) idris-warnings-buffers))
+    (cl-pushnew (current-buffer) idris-warnings-buffers)
     overlay))
 
 (provide 'idris-warnings)
