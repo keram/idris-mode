@@ -51,12 +51,10 @@ The event is only logged if `idris-log-events' is non-nil."
   (when idris-log-events
     (with-current-buffer (idris-events-buffer)
       (goto-char (point-max))
-      (let ((buffer-read-only nil)
-            (time (format-time-string "%H:%M:%S")))
+      (let ((buffer-read-only nil))
         (save-excursion
-          (if sending
-              (insert (concat time " -> "))
-            (insert (concat time " <- ")))
+          (insert (concat (format-time-string "%H:%M:%S")
+                          (if sending " -> " " <- ")))
           (idris-pprint-event event (current-buffer))))
       (goto-char (point-max)))))
 
