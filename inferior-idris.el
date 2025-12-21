@@ -198,6 +198,10 @@ This is maintained to restart Idris when the arguments change.")
   (let* ((msg (concat (idris-prin1-to-string sexp) "\n"))
          (string (concat (idris-encode-length (length msg)) msg)))
     (idris-event-log sexp t)
+    ;; TODO: get this fixed in Idris2 and remove the sleep
+    ;; Workaround to give Idris time to process previous message
+    ;; https://discord.com/channels/827106007712661524/859010945173815306/1452330258555736135
+    (sleep-for 0.0001)
     (process-send-string proc string)))
 
 (defun idris-encode-length (n)
