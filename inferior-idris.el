@@ -112,7 +112,7 @@ This is maintained to restart Idris when the arguments change.")
     (delete-process idris-process)
     (setq idris-process nil)))
 
-(defvar idris-process-port-output-regexp (rx (? (group (+ any (not num)))) (group (+ (any num))))
+(defvar idris-process-port-output-regexp (rx (? (group (+ anychar (not num)))) (group (+ (any num))))
   "Regexp used to match the port of an Idris process.")
 (defvar idris-process-exact-port-output-regexp (rx bol (group (+ (any num))) eol)
   "Regexp to match port number.")
@@ -120,11 +120,11 @@ This is maintained to restart Idris when the arguments change.")
   "Port number matcher.")
 
 (defvar idris-process-port-with-warning-output-regexp
-  (rx (? (group (+ any (not num)))) (group (** 3 4 (any num)))))
-;;      ^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^
-;;           ^                          ^
-;;           |                          |
-;;           |                          +---- port number
+  (rx (? (group (+ anychar (not num)))) (group (** 3 4 (any num)))))
+;;        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^
+;;           ^                              ^
+;;           |                              |
+;;           |                              +---- port number
 ;;           +------------------------------- warning message
 (defvar idris-warning-matcher 1
   "Warning from Idris.")
