@@ -186,20 +186,37 @@ If ALWAYS-INSERT is non-nil, always insert a prompt at the end of the buffer."
       (idris-repl-insert-prompt)
       (insert current-input))))
 
+(defcustom idris-x-switch-to-repl-copy-region t
+  "*Experimental*
+When using the `idris-switch-to-repl' command with an active region,
+copy the region and paste it into the REPL.
+This copy does not modify the user's kill ring."
+  :group 'idris
+  :type 'boolean)
+
 (autoload 'idris-load-file-sync "idris-commands.el")
 ;;;###autoload
 (defun idris-switch-to-repl (&optional load-file)
   "Switch to the Idris REPL buffer.
 
-When executed in Idris file and LOAD-FILE is non-nil,
-the current file will be loaded  into Idris before switching.
-Errors during file loading are ignored."
+If called from an Idris file and LOAD-FILE is non-nil,
+load the current file into the REPL before switching.
+Errors during file loading are ignored.
+
+*Experimental*
+When feature flag `idris-x-switch-to-repl-copy-region' is enabled
+and there is an active region, paste the region into the REPL."
   (interactive "P")
-  (if (and (derived-mode-p 'idris-mode) load-file)
-        (idris-load-file-sync t)
-      (idris-run))
-  (pop-to-buffer (idris-repl-buffer))
-  (goto-char (point-max)))
+  (let ((region (if (and idris-x-switch-to-repl-copy-region (use-region-p))
+                    (buffer-substring-no-properties
+                     (region-beginning) (region-end)))))
+    (idris-run)
+    (when (and (derived-mode-p 'idris-mode) load-file)
+      (idris-load-file-sync t))
+    (pop-to-buffer (idris-repl-buffer))
+    (goto-char (point-max))
+    (when region
+      (insert region))))
 
 (define-obsolete-function-alias 'idris-switch-to-output-buffer 'idris-switch-to-repl "2022-12-28")
 
