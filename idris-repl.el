@@ -188,10 +188,16 @@ If ALWAYS-INSERT is non-nil, always insert a prompt at the end of the buffer."
 
 (autoload 'idris-load-file-sync "idris-commands.el")
 ;;;###autoload
-(defun idris-switch-to-repl ()
-  "Load the current Idris file buffer and jump to the Idris REPL."
-  (interactive nil idris-mode)
-  (idris-load-file-sync t)
+(defun idris-switch-to-repl (&optional load-file)
+  "Switch to the Idris REPL buffer.
+
+When executed in Idris file and LOAD-FILE is non-nil,
+the current file will be loaded  into Idris before switching.
+Errors during file loading are ignored."
+  (interactive "P")
+  (if (and (derived-mode-p 'idris-mode) load-file)
+        (idris-load-file-sync t)
+      (idris-run))
   (pop-to-buffer (idris-repl-buffer))
   (goto-char (point-max)))
 
