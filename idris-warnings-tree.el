@@ -31,6 +31,7 @@
 (require 'idris-core)
 (require 'idris-warnings)
 (require 'idris-common-utils)
+(require 'idris-xref)
 
 (defvar idris-notes-buffer-name (idris-buffer-name :notes)
   "The name of the buffer containing Idris errors.")
@@ -99,7 +100,8 @@
   "Major mode for displaying Idris compiler notes.
 \\{idris-compiler-notes-mode-map}
 Invokes `idris-compiler-notes-mode-hook'."
-  (setq-local prop-menu-item-functions '(idris-context-menu-items)))
+  (setq-local prop-menu-item-functions '(idris-context-menu-items))
+  (add-hook 'xref-backend-functions #'idris-xref-backend nil 'local))
 
 (defun idris-compiler-notes-show-details ()
   (interactive)

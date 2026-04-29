@@ -28,6 +28,7 @@
 (require 'prop-menu)
 (require 'idris-core)
 (require 'idris-common-utils)
+(require 'idris-xref)
 (require 'help-mode)
 
 (defvar idris-info-buffer-name (idris-buffer-name :info)
@@ -56,7 +57,7 @@
 \\{idris-info-mode-map}
 Invokes `idris-info-mode-hook'."
   (setq-local prop-menu-item-functions '(idris-context-menu-items))
-  (set (make-local-variable 'prop-menu-item-functions) '(idris-context-menu-items)))
+  (add-hook 'xref-backend-functions #'idris-xref-backend nil 'local))
 
 (defun idris-info-buffer ()
   "Return Idris info buffer."
