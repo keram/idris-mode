@@ -61,8 +61,14 @@ set `idris-xref-idris-source-location' instead."
   'idris)
 
 (cl-defmethod xref-backend-identifier-at-point ((_backend (eql idris)))
-  "Alias for `idris-name-at-point'."
-  (idris-name-at-point))
+  "Return the relevant identifier at point.
+
+Parse and sanitizes output from `idris-name-at-point'."
+  ;; name-at in idris2 doesn't like namespace and () around the thing
+  ;; When (idris-name-at-point) returns `Foo.(Bar)` we want to search for "Bar"
+  (let ((parts (cl-remove-if #'string-empty-p
+                             (split-string (idris-name-at-point) "\\."))))
+    (string-trim (car (last parts)) "[({]" "[})]")))
 
 (cl-defmethod xref-backend-definitions ((_backend (eql idris)) symbol)
   "Return a list of Xref objects candidates matching SYMBOL."
