@@ -69,7 +69,7 @@ Advanced users may wish to disable this."
   :group 'idris
   :type 'boolean)
 
-(defcustom idris-semantic-source-highlighting-max-buffer-size 32768 ;; (expt 2 15)
+(defcustom idris-semantic-source-highlighting-max-buffer-size 65536 ;; (expt 2 16)
   "Disable semantic source highlighting if the buffer exceeds the allotted size.
 This is to reduce lag when loading large Idris files."
   :group 'idris
