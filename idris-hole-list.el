@@ -71,10 +71,6 @@ Invokes `idris-hole-list-mode-hook'."
   (setq-local prop-menu-item-functions '(idris-context-menu-items))
   (add-hook 'xref-backend-functions #'idris-xref-backend nil 'local))
 
-;; TODO: Auto detect mode for idris holes buffer instead of
-;; invoking `idris-hole-list-mode' in `idris-hole-list-show'
-;; (push '("#\\*idris-holes\\*$" . idris-hole-list-mode) auto-mode-alist)
-
 (defun idris-hole-list-buffer ()
   "Return the Idris hole buffer, creating one if there is not one."
   (get-buffer-create idris-hole-list-buffer-name))
