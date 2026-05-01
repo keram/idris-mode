@@ -699,8 +699,7 @@ If no indentation is found, return the empty string."
 
                    (insert indentation)
                    (setq end-point (point))
-                   (insert type-decl)
-                   (insert ?\n)
+                   (insert type-decl ?\n)
                    ;; make sure point ends up ready to start a new pattern match
                    (goto-char end-point))))
 
@@ -720,15 +719,13 @@ If no indentation is found, return the empty string."
                          (beginning-of-line)
                          (insert indentation)
                          (setq end-point (point))
-                         (insert clause)
-                         (insert ?\n ?\n)
+                         (insert clause ?\n ?\n)
                          ;; make sure point is at new defn
                          (goto-char end-point))
                      ;; otherwise it goes at the end of the buffer
                      (let ((end (point-max)))
                        (goto-char end)
-                       (insert clause)
-                       (insert ?\n)
+                       (insert clause ?\n)
                        ;; make sure point is at new defn
                        (goto-char end)))))))))))
 
