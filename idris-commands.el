@@ -689,20 +689,21 @@ If no indentation is found, return the empty string."
                    ;; add new line between the type signature and the lemma
                    (if (equal (point) (point-min))
                        (progn
-                         (newline 1)
+                         (insert ?\n)
                          (forward-line -1))
                      ;; otherwise find first non empty line
                      (forward-line -1)
                      (when (looking-at-p "^.*\\S-.*$")
                        (forward-line 1)
-                       (newline 1)))
+                       (insert ?\n)))
 
                    (insert indentation)
                    (setq end-point (point))
                    (insert type-decl)
-                   (newline 1)
+                   (insert ?\n)
                    ;; make sure point ends up ready to start a new pattern match
                    (goto-char end-point))))
+
               ((equal lemma-type :provisional-definition-lemma)
                (let ((clause (cadr (assoc :definition-clause (cdr result)))))
                  ;; Insert the definition just after the current definition
@@ -720,14 +721,14 @@ If no indentation is found, return the empty string."
                          (insert indentation)
                          (setq end-point (point))
                          (insert clause)
-                         (newline 2)
+                         (insert ?\n ?\n)
                          ;; make sure point is at new defn
                          (goto-char end-point))
                      ;; otherwise it goes at the end of the buffer
                      (let ((end (point-max)))
                        (goto-char end)
                        (insert clause)
-                       (newline)
+                       (insert ?\n)
                        ;; make sure point is at new defn
                        (goto-char end)))))))))))
 
