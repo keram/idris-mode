@@ -659,7 +659,7 @@ If no indentation is found, return the empty string."
       (let* ((result (idris-user-eval `(:make-lemma ,(cdr what) ,(car what))))
              (lemma-type (car result)))
         ;; There are two cases here: either a ?hole, or the {name} of a provisional defn.
-        (cond ((equal lemma-type :metavariable-lemma)
+        (cond ((eq lemma-type :metavariable-lemma)
                (let ((lem-app (cadr (assoc :replace-metavariable (cdr result))))
                      (type-decl (cadr (assoc :definition-type (cdr result)))))
                  ;; replace the hole
@@ -704,7 +704,7 @@ If no indentation is found, return the empty string."
                    ;; make sure point ends up ready to start a new pattern match
                    (goto-char end-point))))
 
-              ((equal lemma-type :provisional-definition-lemma)
+              ((eq lemma-type :provisional-definition-lemma)
                (let ((clause (cadr (assoc :definition-clause (cdr result)))))
                  ;; Insert the definition just after the current definition
                  ;; This can either be before the next type definition or at the end of
