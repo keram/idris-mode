@@ -269,16 +269,15 @@ This sets the load position to point, if there is one."
                (idris-semantic-source-highlighting
                 (and idris-x-enable-semantic-source-highlighting-in-sync-file-load
                      (idris-buffer-semantic-source-highlighting))))
-          (setq idris-currently-loaded-buffer nil)
           (idris-switch-working-directory srcdir)
           (idris-toggle-semantic-source-highlighting)
           (let ((result
                  (idris-eval
                   (if idris-load-to-here
                       `(:load-file ,fn ,(idris-get-line-num idris-load-to-here))
-                    `(:load-file ,fn)))))
+                    `(:load-file ,fn))))
+                (idris-currently-loaded-buffer (current-buffer)))
             (idris-update-options-cache)
-            (setq idris-currently-loaded-buffer (current-buffer))
             (idris-make-clean)
             (idris-update-loaded-region (car result)))))
     (user-error "Cannot find file for current buffer")))
