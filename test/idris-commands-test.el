@@ -544,6 +544,39 @@ third definition
         (advice-remove 'idris-load-file-sync #'idris-load-file-sync-stub)
         (advice-remove 'idris-eval #'idris-eval-stub)))))
 
+(ert-deftest idris-proof-search-next ()
+  "Test `idris-proof-search-next'."
+  (skip-unless (string-match-p "idris2$" idris-interpreter-path))
+  (let (eval-result)
+    (cl-flet ((idris-load-file-sync-stub () nil)
+              (idris-eval-stub (sexp &optional no-errors)
+                (apply #'funcall eval-result)))
+      (advice-add 'idris-load-file-sync :override #'idris-load-file-sync-stub)
+      (advice-add 'idris-eval :override #'idris-eval-stub)
+      (unwind-protect
+          (with-temp-buffer
+            (insert "data Foo = A | B
+
+testf : Foo -> Int
+testf x = ?hole1
+")
+            (goto-char (point-min))
+            (re-search-forward "hole")
+            (setq eval-result (list #'identity '("42")))
+            (funcall-interactively 'idris-proof-search)
+            (should (string-match-p "testf x = 42"
+                                    (buffer-substring-no-properties (point-min) (point-max))))
+            (setq eval-result (list #'identity '("1337")))
+            (funcall-interactively 'idris-proof-search-next)
+            (should (string-match-p "testf x = 1337"
+                                    (buffer-substring-no-properties (point-min) (point-max))))
+
+            (setq eval-result (list #'error "%s (synchronous Idris evaluation failed)" "No more results"))
+            (should-error (funcall-interactively 'idris-proof-search-next)))
+
+        (advice-remove 'idris-load-file-sync #'idris-load-file-sync-stub)
+        (advice-remove 'idris-eval #'idris-eval-stub)))))
+
 ;; Tests by Yasuhiko Watanabe
 ;; https://github.com/idris-hackers/idris-mode/pull/537/files
 (idris-ert-command-action "test-data/CaseSplit.idr" idris-case-split idris-test-eq-buffer)

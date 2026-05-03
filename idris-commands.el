@@ -734,6 +734,11 @@ If no indentation is found, return the empty string."
         (idris-repl-eval-string (format ":exec %s" name) 0))
     (idris-eval '(:interpret ":exec"))))
 
+(defvar-local proof-region-start nil
+  "The start position of the last proof region.")
+(defvar-local proof-region-end nil
+  "The end position of the last proof region.")
+
 (defun idris-replace-hole-with (expr)
   "Replace the hole under the cursor by some EXPR."
   (save-excursion
@@ -741,12 +746,9 @@ If no indentation is found, return the empty string."
           (end (progn (forward-char) (search-forward-regexp "[^a-zA-Z0-9_']")
                       (backward-char) (point))))
       (delete-region start end))
-    (insert expr)))
-
-(defvar-local proof-region-start nil
-  "The start position of the last proof region.")
-(defvar-local proof-region-end nil
-  "The end position of the last proof region.")
+    (setq proof-region-start (point))
+    (insert expr)
+    (setq proof-region-end (point))))
 
 (defun idris-proof-search (&optional arg)
   "Invoke the proof search.
