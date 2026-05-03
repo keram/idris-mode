@@ -785,14 +785,12 @@ Idris 2 only."
   (if (not proof-region-start)
       (user-error "You must proof search first before looking for subsequent proof results")
     (let ((result (car (idris-eval `:proof-search-next))))
-      (if (string= result "No more results")
-          (message "No more results")
-        (save-excursion
-          (goto-char proof-region-start)
-          (delete-region proof-region-start proof-region-end)
-          (setq proof-region-start (point))
-          (insert result)
-          (setq proof-region-end (point)))))))
+      (save-excursion
+        (goto-char proof-region-start)
+        (delete-region proof-region-start proof-region-end)
+        (setq proof-region-start (point))
+        (insert result)
+        (setq proof-region-end (point))))))
 
 (defvar-local def-region-start nil)
 (defvar-local def-region-end nil)
@@ -829,14 +827,12 @@ Idris 2 only."
   (if (not def-region-start)
       (user-error "You must program search first before looking for subsequent program results")
     (let ((result (car (idris-eval `:generate-def-next))))
-      (if (string= result "No more results")
-          (message "No more results")
-        (save-excursion
-          (goto-char def-region-start)
-          (delete-region def-region-start def-region-end)
-          (setq def-region-start (point))
-          (insert result)
-          (setq def-region-end (point)))))))
+      (save-excursion
+        (goto-char def-region-start)
+        (delete-region def-region-start def-region-end)
+        (setq def-region-start (point))
+        (insert result)
+        (setq def-region-end (point))))))
 
 (defun idris-intro ()
   "Introduce the unambiguous constructor to use in this hole."
