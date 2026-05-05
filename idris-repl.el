@@ -334,12 +334,28 @@ Invokes `idris-repl-mode-hook'."
 (defun idris-repl-complete ()
   "Completion of the current input."
   (when idris-completion-via-compiler
-    (let* ((input (idris-repl-current-input))
-           (result (idris-eval `(:repl-completions ,input))))
-      (cl-destructuring-bind (completions partial) (car result)
-        (if (null completions)
-            nil
-          (list (+ idris-input-start (length partial)) (point-max) completions))))))
+    (when-let* ((thing (idris-repl--thing-to-complete))
+                (result (idris-eval `(:repl-completions ,(car thing)))))
+      (pcase (car result)
+        (`(,completions ,partial)
+         (when completions
+           (list (+ (cdr thing) (length partial)) (point-max) completions)))))))
+
+(defun idris-repl--thing-to-complete ()
+  (let ((input (idris-repl-current-input)))
+    (if (string-match-p "\\s-" input)
+        (when-let* ((bounds (idris-repl--word-bounds)))
+          (cons (buffer-substring-no-properties (car bounds) (cdr bounds))
+                (car bounds)))
+      (cons input idris-input-start))))
+
+(defun idris-repl--word-bounds ()
+  "Return (START . END) of the Idris identifier at point, or nil."
+  (save-excursion
+    (let ((end (point)))
+      (skip-chars-backward "[:alnum:]_.'")
+      (unless (= (point) end)
+        (cons (point) end)))))
 
 (defun idris-repl-begin-of-prompt ()
   "Go to the beginning of line or the prompt."
