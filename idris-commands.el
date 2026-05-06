@@ -733,6 +733,11 @@ If no indentation is found, return the empty string."
         (idris-repl-eval-string (format ":exec %s" name) 0))
     (idris-eval '(:interpret ":exec"))))
 
+(defvar-local proof-region-start nil
+  "The start position of the last proof region.")
+(defvar-local proof-region-end nil
+  "The end position of the last proof region.")
+
 (defun idris-replace-hole-with (expr)
   "Replace the hole under the cursor by some EXPR."
   (save-excursion
@@ -740,12 +745,9 @@ If no indentation is found, return the empty string."
           (end (progn (forward-char) (search-forward-regexp "[^a-zA-Z0-9_']")
                       (backward-char) (point))))
       (delete-region start end))
-    (insert expr)))
-
-(defvar-local proof-region-start nil
-  "The start position of the last proof region.")
-(defvar-local proof-region-end nil
-  "The end position of the last proof region.")
+    (setq proof-region-start (point))
+    (insert expr)
+    (setq proof-region-end (point))))
 
 (defun idris-proof-search (&optional arg)
   "Invoke the proof search.
@@ -782,14 +784,12 @@ Idris 2 only."
   (if (not proof-region-start)
       (user-error "You must proof search first before looking for subsequent proof results")
     (let ((result (car (idris-eval `:proof-search-next))))
-      (if (string= result "No more results")
-          (message "No more results")
-        (save-excursion
-          (goto-char proof-region-start)
-          (delete-region proof-region-start proof-region-end)
-          (setq proof-region-start (point))
-          (insert result)
-          (setq proof-region-end (point)))))))
+      (save-excursion
+        (goto-char proof-region-start)
+        (delete-region proof-region-start proof-region-end)
+        (setq proof-region-start (point))
+        (insert result)
+        (setq proof-region-end (point))))))
 
 (defvar-local def-region-start nil)
 (defvar-local def-region-end nil)
@@ -826,14 +826,12 @@ Idris 2 only."
   (if (not def-region-start)
       (user-error "You must program search first before looking for subsequent program results")
     (let ((result (car (idris-eval `:generate-def-next))))
-      (if (string= result "No more results")
-          (message "No more results")
-        (save-excursion
-          (goto-char def-region-start)
-          (delete-region def-region-start def-region-end)
-          (setq def-region-start (point))
-          (insert result)
-          (setq def-region-end (point)))))))
+      (save-excursion
+        (goto-char def-region-start)
+        (delete-region def-region-start def-region-end)
+        (setq def-region-start (point))
+        (insert result)
+        (setq def-region-end (point))))))
 
 (defun idris-intro ()
   "Introduce the unambiguous constructor to use in this hole."
