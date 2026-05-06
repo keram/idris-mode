@@ -251,9 +251,11 @@ A prefix argument SET-LINE forces loading but only up to the current line."
         (goto-char (overlay-end (car warnings-backward)))
       (user-error "No warnings or errors until beginning of buffer"))))
 
-(defun idris-load-file-sync ()
+(defun idris-load-file-sync (&optional no-errors)
   "Pass the current buffer's file synchronously to the inferior Idris process.
-This sets the load position to point, if there is one."
+This sets the load position to point, if there is one.
+
+If NO-ERRORS is passed the warnings from Idris will be ignored."
   (save-buffer)
   (idris-ensure-process-and-repl-buffer)
   (if (buffer-file-name)
@@ -274,11 +276,15 @@ This sets the load position to point, if there is one."
                  (idris-eval
                   (if idris-load-to-here
                       `(:load-file ,fn ,(idris-get-line-num idris-load-to-here))
-                    `(:load-file ,fn))))
+                    `(:load-file ,fn))
+                  no-errors))
                 (idris-currently-loaded-buffer (current-buffer)))
-            (idris-update-options-cache)
-            (idris-make-clean)
-            (idris-update-loaded-region (car result)))))
+            ;; Currently on success the result contains `(nil)`, on failure just nil
+            (if (and no-errors (null result))
+                (message "Failed to load current file into Idris")
+              (idris-update-options-cache)
+              (idris-make-clean)
+              (idris-update-loaded-region (car result))))))
     (user-error "Cannot find file for current buffer")))
 
 
