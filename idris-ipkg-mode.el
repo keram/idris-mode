@@ -141,7 +141,7 @@
   "Make all modules with existing files clickable, where clicking opens them."
   (interactive)
   (idris-clear-file-link-overlays 'idris-ipkg-mode)
-  (let ((src-dir (idris-ipkg-buffer-src-dir (file-name-directory (buffer-file-name)))))
+  (let ((src-dir (idris-ipkg-buffer-src-dir (buffer-file-name))))
     ;; Make the sourcedir clickable
     (save-excursion
       (goto-char (point-min))

@@ -232,10 +232,9 @@ A prefix argument SET-LINE forces loading but only up to the current line."
 (defun idris-view-compiler-log ()
   "Jump to the log buffer, if it is open."
   (interactive)
-  (let ((buffer (get-buffer idris-log-buffer-name)))
-    (if buffer
-        (pop-to-buffer buffer)
-      (message "No Idris compiler log is currently open"))))
+  (if-let* ((buffer (get-buffer idris-log-buffer-name)))
+      (pop-to-buffer buffer)
+    (message "No Idris compiler log is currently open")))
 
 (defun idris-next-error ()
   "Jump to the next error overlay in the buffer."
@@ -737,7 +736,7 @@ If no indentation is found, return the empty string."
 (defun idris-replace-hole-with (expr)
   "Replace the hole under the cursor by some EXPR."
   (save-excursion
-    (let ((start (progn (search-backward "?") (point)))
+    (let ((start (search-backward "?"))
           (end (progn (forward-char) (search-forward-regexp "[^a-zA-Z0-9_']")
                       (backward-char) (point))))
       (delete-region start end))
@@ -915,8 +914,7 @@ type-correct, so loading will fail."
 (defun idris-list-compiler-notes ()
   "Show the compiler notes in tree view."
   (interactive)
-  (with-temp-message "Preparing compiler note tree..."
-    (idris-compiler-notes-list-show (reverse idris-raw-warnings))))
+  (idris-compiler-notes-list-show (reverse idris-raw-warnings)))
 
 (defun idris-kill-buffers ()
   ;; not killing :events since it it tremendously useful for debuging
@@ -1210,11 +1208,8 @@ of the term to replace."
   ;; The timer is necessary because of the async nature of starting the prover
   (run-with-timer 0.25 nil
                   #'(lambda ()
-                      (let ((buffer (get-buffer idris-prover-script-buffer-name)))
-                        (when buffer
-                          (let ((window (get-buffer-window buffer)))
-                            (when window
-                              (select-window window))))))))
+                      (if-let* ((window (get-buffer-window idris-prover-script-buffer-name)))
+                          (select-window window)))))
 
 (defun idris-fill-paragraph (justify)
   "In literate Idris files, allow filling non-code paragraphs."
