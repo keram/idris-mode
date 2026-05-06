@@ -30,6 +30,7 @@
 (require 'idris-keys)
 (require 'idris-warnings-tree)
 (require 'idris-settings)
+(require 'idris-xref)
 
 (defvar idris-hole-list-buffer-name (idris-buffer-name :holes)
   "The name of the buffer containing Idris holes.")
@@ -66,7 +67,8 @@
   "Major mode used for transient Idris hole list buffers.
 \\{idris-hole-list-mode-map}
 Invokes `idris-hole-list-mode-hook'."
-  (setq-local prop-menu-item-functions '(idris-context-menu-items)))
+  (setq-local prop-menu-item-functions '(idris-context-menu-items))
+  (add-hook 'xref-backend-functions #'idris-xref-backend nil 'local))
 
 ;; TODO: Auto detect mode for idris holes buffer instead of
 ;; invoking `idris-hole-list-mode' in `idris-hole-list-show'
