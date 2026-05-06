@@ -28,6 +28,11 @@
 (require 'idris-common-utils)
 (require 'idris-settings)
 
+(defvar idris--semantic-source-highlighting t
+  "Initial state of syntax highligt when connecting to Idris process.
+
+Used to ensure we send the right value in `:enable-syntax' option.")
+
 (defun idris-highlight-remove-overlays (&optional buffer)
   "Remove all Idris highlighting overlays from BUFFER.
 Use the current buffer if BUFFER is nil."
@@ -107,29 +112,19 @@ See Info node `(elisp)Overlay Properties' to understand how ARGS are used."
                                       end-line end-col
                                       props)))))
 
-(defun idris-highlight-input-region-debug (start-line start-col end-line end-col highlight)
-  (when (not (or (> end-line start-line)
-                 (and (= end-line start-line)
-                      (> end-col start-col))))
-    (message "Not highlighting absurd span %s:%s-%s:%s with %s"
-             start-line start-col
-             end-line end-col
-             highlight)))
-
 (defun idris-toggle-semantic-source-highlighting ()
   "Turn on/off semantic highlighting.
-This is controled by value of `idris-semantic-source-highlighting' variable.
-When the value is `debug' additional checks are performed on received data."
-  (if idris-semantic-source-highlighting
-      (progn
-        (if (eq idris-semantic-source-highlighting 'debug)
-            (advice-add 'idris-highlight-input-region
-                        :before-until
-                        #'idris-highlight-input-region-debug)
-          (advice-remove 'idris-highlight-input-region
-                         #'idris-highlight-input-region-debug))
-        (advice-remove 'idris-highlight-source-file #'ignore))
-    (advice-add 'idris-highlight-source-file :around #'ignore)))
+This is controled by value of `idris-semantic-source-highlighting' variable."
+  (unless (eq idris-semantic-source-highlighting
+              idris--semantic-source-highlighting)
+    (if idris-semantic-source-highlighting
+        (if (>=-protocol-version 2 1)
+            (idris-eval '(:enable-syntax :True))
+          (advice-remove 'idris-highlight-source-file #'ignore))
+      (if (>=-protocol-version 2 1)
+          (idris-eval '(:enable-syntax :False))
+        (advice-add 'idris-highlight-source-file :around #'ignore)))
+    (setq idris--semantic-source-highlighting idris-semantic-source-highlighting)))
 
 (defun idris-buffer-semantic-source-highlighting ()
   "Return nil if current buffer size is larger than set limit.
@@ -142,6 +137,13 @@ Otherwise return current value of `idris-semantic-source-highlighting'"
     (message "Semantic source highlighting is disabled for the current buffer. %s"
              "Customize `idris-semantic-source-highlighting-max-buffer-size' to enable it.")
     nil))
+
+(defun idris-syntax-highlight-event-hook-function (event)
+  (pcase event
+    (`(:output (:ok (:highlight-source ,hs)) ,_target)
+     (idris-highlight-source-file hs)
+     t)
+    (_ nil)))
 
 (provide 'idris-highlight-input)
 ;;; idris-highlight-input.el ends here

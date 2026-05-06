@@ -214,16 +214,13 @@ A prefix argument SET-LINE forces loading but only up to the current line."
                `(:load-file ,fn ,(idris-get-line-num idris-load-to-here))
              `(:load-file ,fn))
            (lambda (result)
-             (pcase result
-               (`(:highlight-source ,hs)
-                (idris-highlight-source-file hs))
-               (_ (idris-make-clean)
-                  (idris-update-options-cache)
-                  (setq idris-currently-loaded-buffer (current-buffer))
-                  (when (member 'warnings-tree idris-warnings-printing)
-                    (idris-list-compiler-notes))
-                  (run-hooks 'idris-load-file-success-hook)
-                  (idris-update-loaded-region result))))
+             (idris-make-clean)
+             (idris-update-options-cache)
+             (setq idris-currently-loaded-buffer (current-buffer))
+             (when (member 'warnings-tree idris-warnings-printing)
+               (idris-list-compiler-notes))
+             (run-hooks 'idris-load-file-success-hook)
+             (idris-update-loaded-region result))
            (lambda (_condition)
              (when (member 'warnings-tree idris-warnings-printing)
                (idris-list-compiler-notes))))))
@@ -267,16 +264,19 @@ This sets the load position to point, if there is one."
           (idris-load-to (point)))
         (let* ((dir-and-fn (idris-filename-to-load))
                (fn (cdr dir-and-fn))
-               (srcdir (car dir-and-fn)))
-          (setq idris-currently-loaded-buffer nil)
+               (srcdir (car dir-and-fn))
+               (idris-semantic-source-highlighting
+                (and idris-x-enable-semantic-source-highlighting-in-sync-file-load
+                     (idris-buffer-semantic-source-highlighting))))
           (idris-switch-working-directory srcdir)
+          (idris-toggle-semantic-source-highlighting)
           (let ((result
                  (idris-eval
                   (if idris-load-to-here
                       `(:load-file ,fn ,(idris-get-line-num idris-load-to-here))
-                    `(:load-file ,fn)))))
+                    `(:load-file ,fn))))
+                (idris-currently-loaded-buffer (current-buffer)))
             (idris-update-options-cache)
-            (setq idris-currently-loaded-buffer (current-buffer))
             (idris-make-clean)
             (idris-update-loaded-region (car result)))))
     (user-error "Cannot find file for current buffer")))
@@ -1001,7 +1001,8 @@ https://github.com/clojure-emacs/cider"
         idris-rex-continuations '()
         idris-process-current-working-directory nil
         idris-protocol-version 0
-        idris-protocol-version-minor 0))
+        idris-protocol-version-minor 0
+        idris--semantic-source-highlighting t))
 
 (defun idris-delete-ibc (no-confirmation)
   "Delete the IBC file for the current buffer.
